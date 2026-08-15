@@ -1,0 +1,8 @@
+flask==3.0.2
+Flask-SocketIO>=5.3.6,<6.0
+simple-websocket>=1.0.0,<2.0
+opencv-python==4.9.0.80
+numpy==1.26.4
+werkzeug==3.0.1
+requests==2.31.0
+mysql-connector-python==8.3.0

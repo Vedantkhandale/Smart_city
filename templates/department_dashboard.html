@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Department Dashboard | Nagpur Pulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/animations.css">
+  <link rel="stylesheet" href="/static/theme-premium.css">
+  <style>
+    :root {
+      --primary: #59f3d1;
+      --secondary: #9582ff;
+      --accent: #79bfff;
+      --danger: #ff7082;
+      --warning: #ffca73;
+      --success: #3ade80;
+      --dark: #07131f;
+      --card: #0c1d2d;
+    }
+    
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #06121d, #071827 50%, #06121d);
+      color: #eaf5fa;
+      font-family: Manrope, Arial, sans-serif;
+      min-height: 100vh;
+    }
+    
+    .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      animation: slideUp 0.6s ease-out;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    
+    .header-title {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    
+    .dept-badge {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 28px;
+      box-shadow: 0 8px 25px rgba(89, 243, 209, 0.2);
+      animation: float 4s ease-in-out infinite;
+    }
+    
+    .dept-badge.traffic { background: linear-gradient(135deg, #ff7082, #ff8fa3); }
+    .dept-badge.pwd { background: linear-gradient(135deg, #ffca73, #ffe4a3); }
+    .dept-badge.sanitation { background: linear-gradient(135deg, #3ade80, #7dffa8); }
+    .dept-badge.water { background: linear-gradient(135deg, #79bfff, #a3d5ff); }
+    
+    .header-info h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: -1px;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+    
+    .header-info p {
+      margin: 5px 0 0;
+      color: #91a5b7;
+      font-size: 14px;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 20px;
+      border: 1px solid rgba(89, 243, 209, 0.3);
+      background: rgba(89, 243, 209, 0.1);
+      color: var(--primary);
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .btn:hover {
+      background: rgba(89, 243, 209, 0.2);
+      border-color: var(--primary);
+      box-shadow: 0 6px 20px rgba(89, 243, 209, 0.25);
+      transform: translateY(-2px);
+    }
+    
+    .btn.primary {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #062032;
+      border-color: var(--primary);
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: linear-gradient(135deg, rgba(12, 29, 45, 0.8), rgba(8, 19, 30, 0.9));
+      border: 1px solid rgba(89, 243, 209, 0.15);
+      border-radius: 16px;
+      padding: 20px;
+      animation: slideUp 0.6s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .stat-card:nth-child(1) { animation-delay: 0.3s; }
+    .stat-card:nth-child(2) { animation-delay: 0.4s; }
+    .stat-card:nth-child(3) { animation-delay: 0.5s; }
+    .stat-card:nth-child(4) { animation-delay: 0.6s; }
+    
+    .stat-card:hover {
+      border-color: rgba(89, 243, 209, 0.4);
+      box-shadow: 0 12px 30px rgba(89, 243, 209, 0.2);
+      transform: translateY(-5px);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #91a5b7;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+    
+    .stat-change {
+      font-size: 11px;
+      color: #3ade80;
+    }
+    
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .queue-section {
+      background: linear-gradient(135deg, rgba(12, 29, 45, 0.85), rgba(8, 19, 30, 0.95));
+      border: 1px solid rgba(89, 243, 209, 0.15);
+      border-radius: 20px;
+      padding: 25px;
+      animation: slideUp 0.8s ease-out 0.2s both;
+    }
+    
+    .queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(89, 243, 209, 0.1);
+    }
+    
+    .queue-header h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+      padding: 8px 14px;
+      border: 1px solid rgba(89, 243, 209, 0.2);
+      background: transparent;
+      color: #91a5b7;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .filter-tab.active {
+      background: rgba(89, 243, 209, 0.2);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .filter-tab:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .ticket-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+    }
+    
+    .ticket-item {
+      background: rgba(12, 29, 45, 0.6);
+      border: 1px solid rgba(89, 243, 209, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.4s ease-out forwards;
+      opacity: 0;
+    }
+    
+    .ticket-item:nth-child(1) { animation-delay: 0.3s; }
+    .ticket-item:nth-child(2) { animation-delay: 0.35s; }
+    .ticket-item:nth-child(3) { animation-delay: 0.4s; }
+    .ticket-item:nth-child(4) { animation-delay: 0.45s; }
+    .ticket-item:nth-child(5) { animation-delay: 0.5s; }
+    
+    .ticket-item:hover {
+      background: rgba(12, 29, 45, 0.8);
+      border-color: rgba(89, 243, 209, 0.3);
+      box-shadow: 0 8px 20px rgba(89, 243, 209, 0.15);
+      transform: translateX(5px);
+    }
+    
+    .ticket-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    
+    .ticket-ref {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      font-family: "DM Mono", monospace;
+    }
+    
+    .ticket-status {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .status-pending { background: rgba(255, 202, 115, 0.2); color: #ffca73; }
+    .status-assigned { background: rgba(121, 191, 255, 0.2); color: #79bfff; }
+    .status-in-progress { background: rgba(149, 130, 255, 0.2); color: #9582ff; }
+    .status-completed { background: rgba(58, 222, 128, 0.2); color: #3ade80; }
+    
+    .ticket-issue {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #eaf5fa;
+    }
+    
+    .ticket-details {
+      font-size: 11px;
+      color: #91a5b7;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    .severity-badge {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    
+    .severity-critical { background: #ff7082; box-shadow: 0 0 10px #ff7082; }
+    .severity-high { background: #ffca73; }
+    .severity-medium { background: #79bfff; }
+    .severity-low { background: #3ade80; }
+    
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .sidebar-card {
+      background: linear-gradient(135deg, rgba(12, 29, 45, 0.85), rgba(8, 19, 30, 0.95));
+      border: 1px solid rgba(89, 243, 209, 0.15);
+      border-radius: 16px;
+      padding: 18px;
+      animation: slideUp 0.8s ease-out 0.3s both;
+    }
+    
+    .sidebar-card h3 {
+      margin: 0 0 15px;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+    
+    .priority-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .priority-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background: rgba(89, 243, 209, 0.08);
+      border-radius: 8px;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .priority-item:hover {
+      background: rgba(89, 243, 209, 0.15);
+    }
+    
+    .priority-count {
+      background: rgba(89, 243, 209, 0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+    
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: rgba(89, 243, 209, 0.2);
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(89, 243, 209, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-title">
+        <div class="dept-badge traffic">🚦</div>
+        <div class="header-info">
+          <h1 id="deptName">Department Dashboard</h1>
+          <p id="deptDesc">Manage your assigned civic issues</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn">← Back to Report</a>
+        <a href="/admin" class="btn">Admin View</a>
+        <button class="btn primary" id="refreshBtn">Refresh Data</button>
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-label">📋 Total Assigned</div>
+        <div class="stat-value" id="totalTickets">0</div>
+        <div class="stat-change">This month</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">⚡ Pending Action</div>
+        <div class="stat-value" id="pendingTickets">0</div>
+        <div class="stat-change">Awaiting work</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">⏱️ In Progress</div>
+        <div class="stat-value" id="inProgressTickets">0</div>
+        <div class="stat-change">Currently working</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">✅ Completed</div>
+        <div class="stat-value" id="completedTickets">0</div>
+        <div class="stat-change">This month</div>
+      </div>
+    </div>
+    
+    <div class="main-grid">
+      <div class="queue-section">
+        <div class="queue-header">
+          <h2>📌 Work Queue</h2>
+          <span id="queueCount" style="font-size: 12px; color: #91a5b7;">0 tickets</span>
+        </div>
+        
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-status="all">All</button>
+          <button class="filter-tab" data-status="pending">Pending</button>
+          <button class="filter-tab" data-status="in-progress">In Progress</button>
+          <button class="filter-tab" data-status="completed">Completed</button>
+        </div>
+        
+        <div class="ticket-list" id="ticketList">
+          <div class="ticket-item" style="text-align: center; color: #91a5b7; padding: 40px;">
+            Loading tickets...
+          </div>
+        </div>
+      </div>
+      
+      <div class="sidebar">
+        <div class="sidebar-card">
+          <h3>🎯 Priority Breakdown</h3>
+          <div class="priority-list">
+            <div class="priority-item">
+              <span><span class="severity-badge severity-critical"></span>Critical</span>
+              <span class="priority-count" id="criticalCount">0</span>
+            </div>
+            <div class="priority-item">
+              <span><span class="severity-badge severity-high"></span>High</span>
+              <span class="priority-count" id="highCount">0</span>
+            </div>
+            <div class="priority-item">
+              <span><span class="severity-badge severity-medium"></span>Medium</span>
+              <span class="priority-count" id="mediumCount">0</span>
+            </div>
+            <div class="priority-item">
+              <span><span class="severity-badge severity-low"></span>Low</span>
+              <span class="priority-count" id="lowCount">0</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="sidebar-card">
+          <h3>📊 Issue Types</h3>
+          <div class="priority-list" id="issueTypes">
+            <div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">
+              Loading...
+            </div>
+          </div>
+        </div>
+        
+        <div class="sidebar-card">
+          <h3>📍 Zone Coverage</h3>
+          <div class="priority-list" id="zoneCoverage">
+            <div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">
+              Loading...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="/static/theme-effects.js"></script>
+  <script>
+    const dept = new URLSearchParams(location.search).get('dept') || 'Traffic';
+    const deptConfig = {
+      'Traffic': { name: 'Traffic Police', icon: '🚦', color: '#ff7082' },
+      'PWD': { name: 'PWD Roads', icon: '🛣️', color: '#ffca73' },
+      'Sanitation': { name: 'Solid Waste Management', icon: '♻️', color: '#3ade80' },
+      'Water': { name: 'Water Works & Drainage', icon: '💧', color: '#79bfff' },
+      'Infrastructure': { name: 'Municipal Corporation', icon: '🏗️', color: '#9582ff' }
+    };
+    
+    const config = deptConfig[dept] || deptConfig['Traffic'];
+    
+    document.getElementById('deptName').textContent = config.name;
+    document.querySelector('.dept-badge').textContent = config.icon;
+    document.querySelector('.dept-badge').className = `dept-badge ${dept.toLowerCase()}`;
+    
+    let allTickets = [];
+    let currentFilter = 'all';
+    
+    async function loadDepartmentData() {
+      try {
+        const res = await fetch(`/api/department-tickets?dept=${encodeURIComponent(dept)}`);
+        const data = await res.json();
+        allTickets = data.tickets || [];
+        
+        updateStats(data);
+        renderTickets(currentFilter);
+        updateSidebar(data);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    }
+    
+    function updateStats(data) {
+      document.getElementById('totalTickets').textContent = data.total || 0;
+      document.getElementById('pendingTickets').textContent = data.pending || 0;
+      document.getElementById('inProgressTickets').textContent = data.inProgress || 0;
+      document.getElementById('completedTickets').textContent = data.completed || 0;
+      document.getElementById('queueCount').textContent = `${allTickets.length} tickets`;
+    }
+    
+    function renderTickets(filter) {
+      currentFilter = filter;
+      let filtered = allTickets;
+      
+      if (filter === 'pending') filtered = allTickets.filter(t => t.status === 'Queued');
+      else if (filter === 'in-progress') filtered = allTickets.filter(t => t.status === 'In Progress');
+      else if (filter === 'completed') filtered = allTickets.filter(t => t.status === 'Resolved');
+      
+      const html = filtered.length ? filtered.map(t => `
+        <div class="ticket-item" onclick="alert('Ticket: ${t.reference}\\nIssue: ${t.issue}\\nZone: ${t.zone}')">
+          <div class="ticket-header">
+            <span class="ticket-ref">${t.reference}</span>
+            <span class="ticket-status status-${t.status.toLowerCase().replace(' ', '-')}">${t.status}</span>
+          </div>
+          <div class="ticket-issue">
+            <span class="severity-badge severity-${t.severity.toLowerCase()}"></span>${t.issue}
+          </div>
+          <div class="ticket-details">
+            <span>📍 ${t.zone}</span>
+            <span>🎯 ${t.severity}</span>
+            <span>⏰ ${new Date(t.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+      `).join('') : '<div style="text-align: center; color: #91a5b7; padding: 40px;">No tickets</div>';
+      
+      document.getElementById('ticketList').innerHTML = html;
+    }
+    
+    function updateSidebar(data) {
+      // Priority breakdown
+      document.getElementById('criticalCount').textContent = data.critical || 0;
+      document.getElementById('highCount').textContent = data.high || 0;
+      document.getElementById('mediumCount').textContent = data.medium || 0;
+      document.getElementById('lowCount').textContent = data.low || 0;
+      
+      // Issue types
+      const issueHtml = (data.issueTypes || []).map(issue => `
+        <div class="priority-item">
+          <span>${issue.type}</span>
+          <span class="priority-count">${issue.count}</span>
+        </div>
+      `).join('') || '<div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">No data</div>';
+      document.getElementById('issueTypes').innerHTML = issueHtml;
+      
+      // Zone coverage
+      const zoneHtml = (data.zones || []).map(zone => `
+        <div class="priority-item">
+          <span>${zone.name}</span>
+          <span class="priority-count">${zone.count}</span>
+        </div>
+      `).join('') || '<div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">No data</div>';
+      document.getElementById('zoneCoverage').innerHTML = zoneHtml;
+    }
+    
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        renderTickets(tab.dataset.status);
+      });
+    });
+    
+    // Refresh button
+    document.getElementById('refreshBtn').addEventListener('click', loadDepartmentData);
+    
+    // Load data on page load
+    loadDepartmentData();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadDepartmentData, 30000);
+  </script>
+</body>
+</html>
