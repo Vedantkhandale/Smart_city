@@ -123,7 +123,6 @@ def detect_issue_features(image, category):
     
     # Detect dark patches (street lights, broken fixtures)
     if category in {"Infrastructure", "PWD"}:
-        # Look for very dark circles/patches (unlit lights)
         dark_threshold = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY)[1]
         contours, _ = cv2.findContours(dark_threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         dark_patches = [c for c in contours if 500 < cv2.contourArea(c) < 50000]
@@ -142,7 +141,6 @@ def detect_issue_features(image, category):
     # Detect debris/garbage (waste accumulation)
     if category in {"Sanitation", "Water"}:
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        # Brown/gray debris detection
         lower_brown = np.array([10, 30, 30])
         upper_brown = np.array([25, 200, 200])
         mask = cv2.inRange(hsv, lower_brown, upper_brown)
@@ -181,10 +179,7 @@ def analyze_civic_image(image_path, category):
     contours, _ = cv2.findContours(adaptive, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     feature_count = len([c for c in contours if cv2.contourArea(c) > 40])
 
-    # 🤖 Enhanced AI feature detection
     ai_features = detect_issue_features(image, category)
-    
-    # Boost confidence if specific features are detected
     feature_boost = max(ai_features["confidence"].values()) if ai_features["confidence"] else 0
 
     category_weight = {"Traffic": 1.35, "PWD": 1.15, "Sanitation": 1.0, "Water": 1.22, "Infrastructure": 1.1}.get(category, 1.0)
@@ -195,13 +190,10 @@ def analyze_civic_image(image_path, category):
     exposure_score = 100 - min(abs(brightness - 128) * 0.55, 45)
     quality_score = int(round(clamp(focus_score * 0.62 + exposure_score * 0.38, 25, 99)))
     
-    # Boost confidence when specific features detected
     base_confidence = clamp(58 + quality_score * 0.25 + min(feature_count, 30) * 0.55, 62, 96)
     confidence = int(round(min(base_confidence + (feature_boost * 0.15), 96)))
     
     signal = CATEGORY_CONFIG[category]["signal"]
-    
-    # Enhanced summary with detected features
     feature_summary = " ".join(ai_features["detected"]) if ai_features["detected"] else ""
     full_summary = f"Vision triage found {feature_count} meaningful visual regions and a {risk_score}/100 risk pattern consistent with {signal}."
     if feature_summary:
@@ -251,12 +243,6 @@ def department_recipient(category):
 
 
 def send_whatsapp_notification(ticket):
-    """Sends a department alert only when Meta Cloud credentials are configured.
-
-    No ticket creation is blocked by a notification failure. In a production rollout,
-    use department numbers that have opted in and a pre-approved template outside the
-    WhatsApp customer-service window.
-    """
     access_token = os.getenv("WHATSAPP_ACCESS_TOKEN")
     phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
     recipient = department_recipient(ticket["category"])
@@ -382,7 +368,6 @@ def get_complaints():
 
 @app.route("/api/complaints/track/<reference>")
 def track_complaint(reference):
-    """Citizen-safe status lookup for the reference produced after a report is submitted."""
     normalized_reference = reference.strip().upper()
     with get_db() as db:
         row = db.execute("SELECT * FROM complaints WHERE reference = ?", (normalized_reference,)).fetchone()
@@ -417,7 +402,6 @@ def get_predictions():
 
 @app.route("/api/city-briefing")
 def get_city_briefing():
-    """A transparent, local 'copilot' briefing generated from the live civic queue."""
     with get_db() as db:
         open_tickets = db.execute("SELECT COUNT(*) FROM complaints WHERE status NOT IN ('Resolved', 'Closed')").fetchone()[0]
         urgent = db.execute("SELECT COUNT(*) FROM complaints WHERE severity IN ('Critical', 'High') AND status NOT IN ('Resolved', 'Closed')").fetchone()[0]
@@ -531,14 +515,8 @@ def update_complaint_status(ticket_id):
 
 @app.route("/api/department-tickets")
 def get_department_tickets():
-    """🏢 Department-specific ticket dashboard API with AI filtering
-    
-    Returns department's assigned work queue with stats and breakdowns.
-    Query params: dept=Traffic|PWD|Sanitation|Water|Infrastructure
-    """
     dept = request.args.get("dept", "Traffic").strip()
     
-    # Find department key from config
     dept_key = None
     for key, config in CATEGORY_CONFIG.items():
         if config["department"].lower() == dept.lower() or key.lower() == dept.lower():
@@ -554,7 +532,6 @@ def get_department_tickets():
     dept_config = CATEGORY_CONFIG[dept_key]
     
     with get_db() as db:
-        # Get all tickets for this department (high priority statuses)
         tickets = db.execute(
             """SELECT id, reference, category, zone, severity, status, 
                       created_at, ai_summary, image_url
@@ -570,31 +547,26 @@ def get_department_tickets():
             """, (dept_config["department"],)
         ).fetchall()
         
-        # Count stats
         total = len(tickets)
         pending = sum(1 for t in tickets if t["status"] in {"Queued", "Priority Dispatch"})
         in_progress = sum(1 for t in tickets if t["status"] in {"Assigned", "In Progress"})
         completed = sum(1 for t in tickets if t["status"] in {"Resolved", "Closed"})
         
-        # Count by severity
         critical = sum(1 for t in tickets if t["severity"] == "Critical")
         high = sum(1 for t in tickets if t["severity"] == "High")
         medium = sum(1 for t in tickets if t["severity"] == "Medium")
         low = sum(1 for t in tickets if t["severity"] == "Low")
         
-        # Group by issue type (category)
         issue_types = {}
         for ticket in tickets:
             cat = ticket["category"]
             issue_types[cat] = issue_types.get(cat, 0) + 1
         
-        # Group by zone
         zones = {}
         for ticket in tickets:
             zone = ticket["zone"]
             zones[zone] = zones.get(zone, 0) + 1
     
-    # Prepare response with department identity
     dept_colors = {
         "Traffic": "#FF6B6B",
         "PWD": "#4ECDC4",
