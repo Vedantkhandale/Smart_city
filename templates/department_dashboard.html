@@ -4,33 +4,33 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Department Dashboard | Nagpur Pulse</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="/static/animations.css">
-  <link rel="stylesheet" href="/static/theme-premium.css">
+  <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
     :root {
-      --primary: #59f3d1;
-      --secondary: #9582ff;
-      --accent: #79bfff;
-      --danger: #ff7082;
-      --warning: #ffca73;
-      --success: #3ade80;
-      --dark: #07131f;
-      --card: #0c1d2d;
+      --paper:#F8F4EA; --paper-raise:#FFFFFF; --ink:#17232B; --ink-soft:#3B4753;
+      --orange:#E15B0F; --orange-deep:#A73E08; --orange-tint:#FBE7D6;
+      --leaf:#1F6F52; --leaf-tint:#E4F2EA; --line:#DCD3BE; --muted:#7A7166;
+      --danger:#B23A32; --amber:#A2760A; --azure:#2B6E91; --violet:#6B5B95;
+      --primary: var(--orange); --secondary: var(--violet); --accent: var(--azure);
+      --warning: var(--amber); --success: var(--leaf); --dark: var(--ink); --card: var(--paper-raise);
+      --font-display:'Zilla Slab',Georgia,serif; --font-body:'Inter',Arial,sans-serif; --font-mono:'IBM Plex Mono',monospace;
     }
-    
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: linear-gradient(135deg, #06121d, #071827 50%, #06121d);
-      color: #eaf5fa;
-      font-family: Manrope, Arial, sans-serif;
+      background: var(--paper);
+      background-image: radial-gradient(circle at 100% 0, rgba(225,91,15,.07), transparent 28rem), radial-gradient(circle at 0 40%, rgba(31,111,82,.06), transparent 30rem);
+      color: var(--ink);
+      font-family: var(--font-body);
       min-height: 100vh;
     }
-    
+
     .container { max-width: 1600px; margin: 0 auto; padding: 24px; }
-    
+
     .header {
       display: flex;
       justify-content: space-between;
@@ -40,185 +40,199 @@
       flex-wrap: wrap;
       gap: 20px;
     }
-    
+
     .header-title {
       display: flex;
       gap: 15px;
       align-items: center;
     }
-    
+
     .dept-badge {
-      width: 60px;
-      height: 60px;
-      border-radius: 16px;
+      width: 58px;
+      height: 58px;
+      border-radius: 14px;
       display: grid;
       place-items: center;
-      font-size: 28px;
-      box-shadow: 0 8px 25px rgba(89, 243, 209, 0.2);
+      font-size: 26px;
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 22px rgba(23,35,43,.08);
       animation: float 4s ease-in-out infinite;
     }
-    
-    .dept-badge.traffic { background: linear-gradient(135deg, #ff7082, #ff8fa3); }
-    .dept-badge.pwd { background: linear-gradient(135deg, #ffca73, #ffe4a3); }
-    .dept-badge.sanitation { background: linear-gradient(135deg, #3ade80, #7dffa8); }
-    .dept-badge.water { background: linear-gradient(135deg, #79bfff, #a3d5ff); }
-    
+
+    .dept-badge.traffic { background: #F6E3E0; }
+    .dept-badge.pwd { background: var(--orange-tint); }
+    .dept-badge.sanitation { background: var(--leaf-tint); }
+    .dept-badge.water { background: #E1EEF3; }
+    .dept-badge.infrastructure { background: #EAE6F1; }
+
     .header-info h1 {
       margin: 0;
-      font-size: 32px;
-      letter-spacing: -1px;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 30px;
+      letter-spacing: -.8px;
+      color: var(--ink);
       animation: fadeInUp 0.6s ease-out 0.1s both;
     }
-    
+
     .header-info p {
       margin: 5px 0 0;
-      color: #91a5b7;
-      font-size: 14px;
+      color: var(--muted);
+      font-size: 13px;
       animation: fadeInUp 0.6s ease-out 0.2s both;
     }
-    
+
     .header-actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
     }
-    
+
     .btn {
       padding: 12px 20px;
-      border: 1px solid rgba(89, 243, 209, 0.3);
-      background: rgba(89, 243, 209, 0.1);
-      color: var(--primary);
+      border: 1px solid var(--line);
+      background: var(--paper-raise);
+      color: var(--ink-soft);
       border-radius: 10px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 12px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 8px;
+      box-shadow: 0 4px 12px rgba(23,35,43,.05);
     }
-    
+
     .btn:hover {
-      background: rgba(89, 243, 209, 0.2);
-      border-color: var(--primary);
-      box-shadow: 0 6px 20px rgba(89, 243, 209, 0.25);
+      border-color: var(--orange);
+      color: var(--orange-deep);
+      box-shadow: 0 6px 18px rgba(225,91,15,.14);
       transform: translateY(-2px);
     }
-    
+
     .btn.primary {
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      color: #062032;
-      border-color: var(--primary);
+      background: var(--orange);
+      color: #fff;
+      border-color: var(--orange);
+      box-shadow: 0 8px 20px rgba(225,91,15,.25);
     }
-    
+    .btn.primary:hover{color:#fff;filter:brightness(1.06)}
+
     .stats {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 16px;
       margin-bottom: 30px;
     }
-    
+
     .stat-card {
-      background: linear-gradient(135deg, rgba(12, 29, 45, 0.8), rgba(8, 19, 30, 0.9));
-      border: 1px solid rgba(89, 243, 209, 0.15);
+      background: var(--paper-raise);
+      border: 1px solid var(--line);
       border-radius: 16px;
       padding: 20px;
+      box-shadow: 0 10px 26px rgba(23,35,43,.05);
       animation: slideUp 0.6s ease-out forwards;
       opacity: 0;
     }
-    
-    .stat-card:nth-child(1) { animation-delay: 0.3s; }
-    .stat-card:nth-child(2) { animation-delay: 0.4s; }
-    .stat-card:nth-child(3) { animation-delay: 0.5s; }
-    .stat-card:nth-child(4) { animation-delay: 0.6s; }
-    
+
+    .stat-card:nth-child(1) { animation-delay: 0.15s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.25s; }
+    .stat-card:nth-child(4) { animation-delay: 0.3s; }
+
     .stat-card:hover {
-      border-color: rgba(89, 243, 209, 0.4);
-      box-shadow: 0 12px 30px rgba(89, 243, 209, 0.2);
-      transform: translateY(-5px);
+      border-color: var(--orange);
+      box-shadow: 0 14px 30px rgba(225,91,15,.12);
+      transform: translateY(-4px);
     }
-    
+
     .stat-label {
-      font-size: 12px;
-      color: #91a5b7;
+      font-size: 11.5px;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 1px;
       margin-bottom: 8px;
     }
-    
+
     .stat-value {
-      font-size: 28px;
+      font-family: var(--font-display);
+      font-size: 30px;
       font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 8px;
+      color: var(--ink);
+      margin-bottom: 6px;
     }
-    
+
     .stat-change {
       font-size: 11px;
-      color: #3ade80;
+      color: var(--leaf);
+      font-family: var(--font-mono);
     }
-    
+
     .main-grid {
       display: grid;
       grid-template-columns: 1fr 350px;
       gap: 20px;
       margin-bottom: 30px;
     }
-    
+
     .queue-section {
-      background: linear-gradient(135deg, rgba(12, 29, 45, 0.85), rgba(8, 19, 30, 0.95));
-      border: 1px solid rgba(89, 243, 209, 0.15);
+      background: var(--paper-raise);
+      border: 1px solid var(--line);
       border-radius: 20px;
       padding: 25px;
-      animation: slideUp 0.8s ease-out 0.2s both;
+      box-shadow: 0 14px 34px rgba(23,35,43,.06);
+      animation: slideUp 0.6s ease-out 0.1s both;
     }
-    
+
     .queue-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
       padding-bottom: 15px;
-      border-bottom: 1px solid rgba(89, 243, 209, 0.1);
+      border-bottom: 1px dashed var(--line);
     }
-    
+
     .queue-header h2 {
       margin: 0;
-      font-size: 20px;
-      letter-spacing: -0.5px;
+      font-family: var(--font-display);
+      font-size: 19px;
+      letter-spacing: -.4px;
+      color: var(--ink);
     }
-    
+
     .filter-tabs {
       display: flex;
       gap: 10px;
       margin-bottom: 20px;
       flex-wrap: wrap;
     }
-    
+
     .filter-tab {
       padding: 8px 14px;
-      border: 1px solid rgba(89, 243, 209, 0.2);
-      background: transparent;
-      color: #91a5b7;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--ink-soft);
       border-radius: 8px;
       cursor: pointer;
       font-size: 12px;
-      font-weight: 600;
-      transition: all 0.3s ease;
+      font-weight: 700;
+      transition: all 0.2s ease;
     }
-    
+
     .filter-tab.active {
-      background: rgba(89, 243, 209, 0.2);
-      border-color: var(--primary);
-      color: var(--primary);
+      background: var(--orange-tint);
+      border-color: var(--orange);
+      color: var(--orange-deep);
     }
-    
+
     .filter-tab:hover {
-      border-color: var(--primary);
-      color: var(--primary);
+      border-color: var(--orange);
+      color: var(--orange-deep);
     }
-    
+
     .ticket-list {
       display: flex;
       flex-direction: column;
@@ -226,45 +240,45 @@
       max-height: 600px;
       overflow-y: auto;
     }
-    
+
     .ticket-item {
-      background: rgba(12, 29, 45, 0.6);
-      border: 1px solid rgba(89, 243, 209, 0.1);
+      background: var(--paper);
+      border: 1px solid var(--line);
       border-radius: 12px;
       padding: 16px;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       animation: fadeInUp 0.4s ease-out forwards;
       opacity: 0;
     }
-    
-    .ticket-item:nth-child(1) { animation-delay: 0.3s; }
-    .ticket-item:nth-child(2) { animation-delay: 0.35s; }
-    .ticket-item:nth-child(3) { animation-delay: 0.4s; }
-    .ticket-item:nth-child(4) { animation-delay: 0.45s; }
-    .ticket-item:nth-child(5) { animation-delay: 0.5s; }
-    
+
+    .ticket-item:nth-child(1) { animation-delay: 0.05s; }
+    .ticket-item:nth-child(2) { animation-delay: 0.1s; }
+    .ticket-item:nth-child(3) { animation-delay: 0.15s; }
+    .ticket-item:nth-child(4) { animation-delay: 0.2s; }
+    .ticket-item:nth-child(5) { animation-delay: 0.25s; }
+
     .ticket-item:hover {
-      background: rgba(12, 29, 45, 0.8);
-      border-color: rgba(89, 243, 209, 0.3);
-      box-shadow: 0 8px 20px rgba(89, 243, 209, 0.15);
+      background: var(--paper-raise);
+      border-color: var(--orange);
+      box-shadow: 0 8px 20px rgba(225,91,15,.1);
       transform: translateX(5px);
     }
-    
+
     .ticket-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 8px;
     }
-    
+
     .ticket-ref {
       font-size: 12px;
       font-weight: 700;
-      color: var(--primary);
-      font-family: "DM Mono", monospace;
+      color: var(--orange-deep);
+      font-family: var(--font-mono);
     }
-    
+
     .ticket-status {
       display: inline-block;
       padding: 4px 10px;
@@ -274,27 +288,28 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    
-    .status-pending { background: rgba(255, 202, 115, 0.2); color: #ffca73; }
-    .status-assigned { background: rgba(121, 191, 255, 0.2); color: #79bfff; }
-    .status-in-progress { background: rgba(149, 130, 255, 0.2); color: #9582ff; }
-    .status-completed { background: rgba(58, 222, 128, 0.2); color: #3ade80; }
-    
+
+    .status-pending { background: #F3ECD7; color: var(--amber); }
+    .status-assigned { background: #E1EEF3; color: var(--azure); }
+    .status-in-progress { background: #EAE6F1; color: var(--violet); }
+    .status-completed { background: var(--leaf-tint); color: var(--leaf); }
+
     .ticket-issue {
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 13.5px;
+      font-weight: 700;
       margin-bottom: 6px;
-      color: #eaf5fa;
+      color: var(--ink);
     }
-    
+
     .ticket-details {
       font-size: 11px;
-      color: #91a5b7;
+      color: var(--muted);
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      font-family: var(--font-mono);
     }
-    
+
     .severity-badge {
       display: inline-block;
       width: 8px;
@@ -303,89 +318,94 @@
       margin-right: 6px;
       vertical-align: middle;
     }
-    
-    .severity-critical { background: #ff7082; box-shadow: 0 0 10px #ff7082; }
-    .severity-high { background: #ffca73; }
-    .severity-medium { background: #79bfff; }
-    .severity-low { background: #3ade80; }
-    
+
+    .severity-critical { background: var(--danger); box-shadow: 0 0 8px rgba(178,58,50,.5); }
+    .severity-high { background: var(--orange); }
+    .severity-medium { background: var(--amber); }
+    .severity-low { background: var(--leaf); }
+
     .sidebar {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
-    
+
     .sidebar-card {
-      background: linear-gradient(135deg, rgba(12, 29, 45, 0.85), rgba(8, 19, 30, 0.95));
-      border: 1px solid rgba(89, 243, 209, 0.15);
+      background: var(--paper-raise);
+      border: 1px solid var(--line);
       border-radius: 16px;
       padding: 18px;
-      animation: slideUp 0.8s ease-out 0.3s both;
+      box-shadow: 0 10px 26px rgba(23,35,43,.05);
+      animation: slideUp 0.6s ease-out 0.15s both;
     }
-    
+
     .sidebar-card h3 {
       margin: 0 0 15px;
-      font-size: 14px;
-      letter-spacing: 0.5px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
       text-transform: uppercase;
-      color: var(--primary);
+      color: var(--orange-deep);
     }
-    
+
     .priority-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
-    
+
     .priority-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 10px;
-      background: rgba(89, 243, 209, 0.08);
+      background: var(--paper);
+      border: 1px solid var(--line);
       border-radius: 8px;
       font-size: 12px;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
-    
+
     .priority-item:hover {
-      background: rgba(89, 243, 209, 0.15);
+      border-color: var(--orange);
     }
-    
+
     .priority-count {
-      background: rgba(89, 243, 209, 0.2);
+      background: var(--orange-tint);
+      color: var(--orange-deep);
       padding: 2px 8px;
       border-radius: 4px;
       font-weight: 700;
-      color: var(--primary);
+      font-family: var(--font-mono);
     }
-    
+
     @media (max-width: 1024px) {
       .main-grid {
         grid-template-columns: 1fr;
       }
-      
+
       .header {
         flex-direction: column;
         align-items: flex-start;
       }
     }
-    
+
     ::-webkit-scrollbar {
       width: 8px;
     }
-    
+
     ::-webkit-scrollbar-track {
       background: transparent;
     }
-    
+
     ::-webkit-scrollbar-thumb {
-      background: rgba(89, 243, 209, 0.2);
+      background: var(--line);
       border-radius: 4px;
     }
-    
+
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(89, 243, 209, 0.4);
+      background: var(--orange);
     }
   </style>
 </head>
@@ -433,7 +453,7 @@
       <div class="queue-section">
         <div class="queue-header">
           <h2>📌 Work Queue</h2>
-          <span id="queueCount" style="font-size: 12px; color: #91a5b7;">0 tickets</span>
+          <span id="queueCount" style="font-size: 12px; color: var(--muted); font-family: var(--font-mono);">0 tickets</span>
         </div>
         
         <div class="filter-tabs">
@@ -444,7 +464,7 @@
         </div>
         
         <div class="ticket-list" id="ticketList">
-          <div class="ticket-item" style="text-align: center; color: #91a5b7; padding: 40px;">
+          <div class="ticket-item" style="text-align: center; color: var(--muted); padding: 40px;">
             Loading tickets...
           </div>
         </div>
@@ -476,7 +496,7 @@
         <div class="sidebar-card">
           <h3>📊 Issue Types</h3>
           <div class="priority-list" id="issueTypes">
-            <div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">
+            <div style="text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">
               Loading...
             </div>
           </div>
@@ -485,7 +505,7 @@
         <div class="sidebar-card">
           <h3>📍 Zone Coverage</h3>
           <div class="priority-list" id="zoneCoverage">
-            <div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">
+            <div style="text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">
               Loading...
             </div>
           </div>
@@ -494,15 +514,14 @@
     </div>
   </div>
   
-  <script src="/static/theme-effects.js"></script>
   <script>
     const dept = new URLSearchParams(location.search).get('dept') || 'Traffic';
     const deptConfig = {
-      'Traffic': { name: 'Traffic Police', icon: '🚦', color: '#ff7082' },
-      'PWD': { name: 'PWD Roads', icon: '🛣️', color: '#ffca73' },
-      'Sanitation': { name: 'Solid Waste Management', icon: '♻️', color: '#3ade80' },
-      'Water': { name: 'Water Works & Drainage', icon: '💧', color: '#79bfff' },
-      'Infrastructure': { name: 'Municipal Corporation', icon: '🏗️', color: '#9582ff' }
+      'Traffic': { name: 'Traffic Police', icon: '🚦', color: '#B23A32' },
+      'PWD': { name: 'PWD Roads', icon: '🛣️', color: '#E15B0F' },
+      'Sanitation': { name: 'Solid Waste Management', icon: '♻️', color: '#1F6F52' },
+      'Water': { name: 'Water Works & Drainage', icon: '💧', color: '#2B6E91' },
+      'Infrastructure': { name: 'Municipal Corporation', icon: '🏗️', color: '#6B5B95' }
     };
     
     const config = deptConfig[dept] || deptConfig['Traffic'];
@@ -559,7 +578,7 @@
             <span>⏰ ${new Date(t.created_at).toLocaleDateString()}</span>
           </div>
         </div>
-      `).join('') : '<div style="text-align: center; color: #91a5b7; padding: 40px;">No tickets</div>';
+      `).join('') : '<div style="text-align: center; color: var(--muted); padding: 40px;">No tickets</div>';
       
       document.getElementById('ticketList').innerHTML = html;
     }
@@ -577,7 +596,7 @@
           <span>${issue.type}</span>
           <span class="priority-count">${issue.count}</span>
         </div>
-      `).join('') || '<div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">No data</div>';
+      `).join('') || '<div style="text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No data</div>';
       document.getElementById('issueTypes').innerHTML = issueHtml;
       
       // Zone coverage
@@ -586,7 +605,7 @@
           <span>${zone.name}</span>
           <span class="priority-count">${zone.count}</span>
         </div>
-      `).join('') || '<div style="text-align: center; color: #91a5b7; padding: 20px; font-size: 12px;">No data</div>';
+      `).join('') || '<div style="text-align: center; color: var(--muted); padding: 20px; font-size: 12px;">No data</div>';
       document.getElementById('zoneCoverage').innerHTML = zoneHtml;
     }
     
