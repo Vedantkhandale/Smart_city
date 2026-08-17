@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Nagpur Pulse | PWD Roads Dashboard</title>
+  <title>Nagpur Pulse | Infrastructure Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -107,10 +107,10 @@
           <circle cx="24" cy="24" r="16.5" fill="#FFF0E6" stroke="#B33B00" stroke-width="1.2"/>
           <path d="M14 27h5l3-10 6 18 3-9h7" stroke="#0F171C" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span><b>Nagpur Pulse</b><small>PWD ROADS</small></span>
+        <span><b>Nagpur Pulse</b><small>INFRASTRUCTURE</small></span>
       </div>
       <div class="top-right">
-        <a href="/admin" class="nav-back">← Back to Admin</a>
+        <a href="admin_dashboard.html" class="nav-back">← Back to Admin</a>
         <div style="display: flex; gap: 12px; align-items: center;">
           <span id="whoLabel" style="font: 11px var(--font-mono); color: var(--ink-soft);"></span>
           <button class="signout" id="signOut">Sign out</button>
@@ -145,7 +145,7 @@
     <div class="stats">
       <div class="stat">
         <strong id="totalCount">0</strong>
-        <span>Road Reports</span>
+        <span>Infrastructure Reports</span>
       </div>
       <div class="stat">
         <strong id="criticalCount">0</strong>
@@ -164,29 +164,41 @@
     <div id="ticketsContainer" class="tickets-grid"></div>
   </main>
 
+  <div id="statusModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,28,.5);z-index:10;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:420px;width:min(90vw,420px);padding:22px;border-radius:16px;box-shadow:0 18px 40px rgba(15,23,28,.2);">
+      <h3 style="margin:0 0 14px;font-family:'Zilla Slab',serif;">Update ticket status</h3>
+      <select id="statusSelect" style="width:100%;padding:12px;border:1px solid #E2DAA8;border-radius:10px;font: 13px Inter, sans-serif;">
+        <option value="Queued">Queued</option>
+        <option value="Priority Dispatch">Priority Dispatch</option>
+        <option value="Assigned">Assigned</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+        <option value="Closed">Closed</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button type="button" onclick="closeStatusModal()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#EAE3D2;color:#0F171C;font-weight:700;cursor:pointer;">Cancel</button>
+        <button type="button" onclick="saveStatusUpdate()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#FF5500;color:#fff;font-weight:700;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </div>
+
   <script src="{{ url_for('static', filename='theme-effects.js') }}"></script>
   <script>
-    const expectedDept = 'PWD';
     if (sessionStorage.getItem('npAuth') !== 'true') {
       sessionStorage.setItem('npAuth', 'true');
-      sessionStorage.setItem('npUser', 'PWD Chief');
-      sessionStorage.setItem('npDept', expectedDept);
+      sessionStorage.setItem('npUser', 'Infrastructure Lead');
+      sessionStorage.setItem('npDept', 'Infrastructure');
       sessionStorage.setItem('npRole', 'lead');
     }
-    const name = sessionStorage.getItem('npUser') || 'PWD Chief';
-    const dept = sessionStorage.getItem('npDept') || expectedDept;
-    if (dept !== expectedDept) {
-      sessionStorage.setItem('npDept', expectedDept);
-      sessionStorage.setItem('npRole', 'lead');
-    }
-    document.getElementById('whoLabel').textContent = 'Demo view: ' + name + ' (' + dept + ')';
+    const name = sessionStorage.getItem('npUser') || 'Infrastructure Lead';
+    document.getElementById('whoLabel').textContent = 'Demo view: ' + name + ' (Infrastructure)';
     document.getElementById('signOut').addEventListener('click', () => {
-      fetch('/api/auth/logout', { method: 'POST' });
       sessionStorage.removeItem('npAuth');
       sessionStorage.removeItem('npUser');
       sessionStorage.removeItem('npDept');
       sessionStorage.removeItem('npRole');
-      window.location.href = '/dashboard/pwd';
+      window.location.href = '/dashboard/infrastructure';
     });
 
     let selectedTicketId = null;
@@ -231,13 +243,15 @@
 
     async function loadComplaints() {
       try {
-        let url = '/api/complaints?limit=250&dept=PWD';
+        let url = '/api/complaints?limit=250&dept=Infrastructure';
         const zone = document.getElementById('zoneFilter').value;
         const status = document.getElementById('statusFilter').value;
         if (zone !== 'All') url += '&zone=' + encodeURIComponent(zone);
         if (status !== 'All') url += '&status=' + encodeURIComponent(status);
+        
         const res = await fetch(url);
         const tickets = await res.json();
+        
         renderTickets(tickets);
         updateStats(tickets);
       } catch (err) {
@@ -248,7 +262,7 @@
     function renderTickets(tickets) {
       const container = document.getElementById('ticketsContainer');
       if (tickets.length === 0) {
-        container.innerHTML = '<div class="empty" style="grid-column: 1/-1;"><p>No road damage reports at this time</p></div>';
+        container.innerHTML = '<div class="empty" style="grid-column: 1/-1;"><p>No infrastructure reports at this time</p></div>';
         return;
       }
 
@@ -288,6 +302,7 @@
       const critical = tickets.filter(t => t.severity === 'Critical').length;
       const pending = tickets.filter(t => t.status !== 'Resolved').length;
       const resolved = tickets.filter(t => t.status === 'Resolved').length;
+
       document.getElementById('totalCount').textContent = total;
       document.getElementById('criticalCount').textContent = critical;
       document.getElementById('pendingCount').textContent = pending;

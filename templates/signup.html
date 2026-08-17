@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/enhance.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme-premium.css') }}">
   <style>
     :root {
       --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
@@ -189,7 +189,7 @@
     </div>
   </div>
 
-  <script src="assets/effects.js"></script>
+  <script src="{{ url_for('static', filename='theme-effects.js') }}"></script>
   <script>
     const form = document.getElementById('signupForm');
     const username = document.getElementById('username');

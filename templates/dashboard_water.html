@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/enhance.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme-premium.css') }}">
   <style>
     :root {
       --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
@@ -55,10 +55,30 @@
     .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
     .ticket-card {
       background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 14px; overflow: hidden;
-      transition: all 0.2s ease; cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      cursor: pointer; animation: floatIn 0.45s ease;
     }
-    .ticket-card:hover { border-color: var(--orange); box-shadow: 0 8px 24px rgba(255,85,0,0.12); }
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .ticket-card:hover { border-color: var(--orange); box-shadow: 0 8px 24px rgba(255,85,0,0.12); transform: translateY(-3px); }
     .ticket-image { width: 100%; height: 160px; background: var(--line-subtle); object-fit: cover; }
+    .tracking-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 999px; background: #FFF1E6; border: 1px solid #FFD4B3; color: var(--orange-deep); font: 700 9px var(--font-mono); text-transform: uppercase; letter-spacing: .06em;
+    }
+    .tracking-note {
+      margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #F8F4EC; border: 1px solid var(--line-subtle); font-size: 11px; color: var(--ink-soft); line-height: 1.5;
+    }
+    .tracking-strip {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    }
+    .tracking-step {
+      padding: 4px 6px; border-radius: 999px; font: 700 8px var(--font-mono); color: var(--muted); border: 1px solid var(--line-subtle); background: #fff; opacity: 0.7;
+    }
+    .tracking-step.done {
+      background: #EAF8F0; border-color: #BEE1CE; color: var(--leaf);
+    }
     .ticket-content { padding: 14px; }
     .ticket-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
     .ticket-ref { font: 700 11px var(--font-mono); color: var(--orange-deep); }
@@ -144,18 +164,82 @@
     <div id="ticketsContainer" class="tickets-grid"></div>
   </main>
 
-  <script src="assets/effects.js"></script>
+  <div id="statusModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,28,.5);z-index:10;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:420px;width:min(90vw,420px);padding:22px;border-radius:16px;box-shadow:0 18px 40px rgba(15,23,28,.2);">
+      <h3 style="margin:0 0 14px;font-family:'Zilla Slab',serif;">Update ticket status</h3>
+      <select id="statusSelect" style="width:100%;padding:12px;border:1px solid #E2DAA8;border-radius:10px;font: 13px Inter, sans-serif;">
+        <option value="Queued">Queued</option>
+        <option value="Priority Dispatch">Priority Dispatch</option>
+        <option value="Assigned">Assigned</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+        <option value="Closed">Closed</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button type="button" onclick="closeStatusModal()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#EAE3D2;color:#0F171C;font-weight:700;cursor:pointer;">Cancel</button>
+        <button type="button" onclick="saveStatusUpdate()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#FF5500;color:#fff;font-weight:700;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='theme-effects.js') }}"></script>
   <script>
     if (sessionStorage.getItem('npAuth') !== 'true') {
-      window.location.href = 'login.html';
+      sessionStorage.setItem('npAuth', 'true');
+      sessionStorage.setItem('npUser', 'Water Lead');
+      sessionStorage.setItem('npDept', 'Water');
+      sessionStorage.setItem('npRole', 'lead');
     }
-    const name = sessionStorage.getItem('npUser') || 'staff';
-    document.getElementById('whoLabel').textContent = 'Signed in as ' + name;
+    const name = sessionStorage.getItem('npUser') || 'Water Lead';
+    document.getElementById('whoLabel').textContent = 'Demo view: ' + name + ' (Water)';
     document.getElementById('signOut').addEventListener('click', () => {
       sessionStorage.removeItem('npAuth');
       sessionStorage.removeItem('npUser');
-      window.location.href = 'login.html';
+      sessionStorage.removeItem('npDept');
+      sessionStorage.removeItem('npRole');
+      window.location.href = '/dashboard/water';
     });
+
+    let selectedTicketId = null;
+
+    function openStatusModal(ticketId) {
+      selectedTicketId = ticketId;
+      document.getElementById('statusModal').style.display = 'flex';
+    }
+
+    function closeStatusModal() {
+      selectedTicketId = null;
+      document.getElementById('statusModal').style.display = 'none';
+    }
+
+    async function saveStatusUpdate() {
+      if (!selectedTicketId) return;
+      await fetch(`/api/complaints/${selectedTicketId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: document.getElementById('statusSelect').value })
+      });
+      closeStatusModal();
+      loadComplaints();
+    }
+
+    async function rejectTicket(ticketId) {
+      const reason = window.prompt('Reject reason?', 'Duplicate or invalid civic report.');
+      if (reason === null) return;
+      await fetch(`/api/complaints/${ticketId}/reject`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: reason || 'Rejected by civic operations.' })
+      });
+      loadComplaints();
+    }
+
+    async function deleteTicket(ticketId) {
+      if (!window.confirm('Delete this complaint permanently?')) return;
+      await fetch(`/api/complaints/${ticketId}`, { method: 'DELETE' });
+      loadComplaints();
+    }
 
     async function loadComplaints() {
       try {
@@ -193,11 +277,20 @@
             <div class="ticket-info">
               <p><strong>Zone:</strong> <span class="ticket-zone">${ticket.zone}</span></p>
               <p><strong>Status:</strong> ${ticket.status}</p>
-              <p><strong>Voice Note:</strong> ${ticket.voice.substring(0, 40)}...</p>
+              <p><strong>Voice Note:</strong> ${ticket.voice ? ticket.voice.substring(0, 40) : 'No note'}...</p>
             </div>
+            <div class="tracking-pill">${ticket.status_label || ticket.status}</div>
+            <div class="tracking-note">${ticket.tracking_note || 'Live tracking is active.'}</div>
+            <div class="tracking-strip">${(ticket.timeline || []).map(step => `<span class="tracking-step ${step.done ? 'done' : ''}">${step.label}</span>`).join('')}</div>
             <div class="ticket-footer">
               <div class="risk-score">Risk: ${ticket.risk_score}/100</div>
-              <div class="eta">${ticket.eta}</div>
+              <div class="eta">${ticket.eta || 'ETA pending'}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <button type="button" onclick="openStatusModal(${ticket.id})" style="flex:1;min-width:76px;padding:8px 10px;border:1px solid #FF5500;border-radius:8px;background:#fff;color:#FF5500;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Update</button>
+              <button type="button" onclick="fetch('/api/complaints/${ticket.id}/status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'Resolved'})}).then(() => loadComplaints())" style="flex:1;min-width:76px;padding:8px 10px;border:1px solid #00875A;border-radius:8px;background:#fff;color:#00875A;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Resolve</button>
+              <button type="button" onclick="rejectTicket(${ticket.id})" style="flex:1;min-width:76px;padding:8px 10px;border:1px solid #DE350B;border-radius:8px;background:#fff;color:#DE350B;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Reject</button>
+              <button type="button" onclick="deleteTicket(${ticket.id})" style="flex:1;min-width:76px;padding:8px 10px;border:1px solid #6B7280;border-radius:8px;background:#fff;color:#6B7280;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Delete</button>
             </div>
           </div>
         </div>

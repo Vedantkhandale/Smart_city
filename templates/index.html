@@ -65,12 +65,24 @@
     .seal-mark { width: 48px; height: 48px; flex: none; filter: drop-shadow(0 4px 12px rgba(255, 85, 0, 0.15)); }
     .brand b { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.4px; font-size: 21px; color: var(--ink); }
     .brand small { display: block; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.8px; color: var(--muted); margin-top: 2px; }
-    .nav { display: flex; align-items: center; gap: 12px; }
-    .live-chip, .admin-link { border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+    .nav { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .live-chip, .admin-link { border: 1px solid var(--line); border-radius: 999px; padding: 12px 20px; font-family: var(--font-mono); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; }
     .live-chip { color: var(--leaf); background: var(--leaf-tint); border-color: #B8E3CD; display: flex; align-items: center; }
-    .live-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--leaf); margin-right: 8px; animation: pulse 1.6s infinite; }
-    .admin-link { color: var(--ink-soft); text-decoration: none; background: var(--paper-raise); box-shadow: 0 4px 14px rgba(15, 23, 28, 0.04); cursor: pointer; border: 1px solid var(--line); }
-    .admin-link:hover { border-color: var(--orange); color: var(--orange-deep); transform: translateY(-1px); }
+    .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--leaf); margin-right: 8px; animation: pulse 1.6s infinite; }
+    .admin-link {
+      color: var(--paper-raise);
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--orange), #FF7A1A);
+      box-shadow: 0 12px 28px rgba(255, 85, 0, 0.28);
+      cursor: pointer;
+      border: 1px solid rgba(255, 85, 0, 0.4);
+      min-height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding-inline: 22px;
+    }
+    .admin-link:hover { border-color: rgba(255, 255, 255, 0.7); color: #fff; transform: translateY(-2px) scale(1.02); box-shadow: 0 16px 36px rgba(255, 85, 0, 0.35); }
     @keyframes pulse { 50% { opacity: 0.3; transform: scale(0.85); } }
     .hero-copy, .signal-card, .report-card, .stage-card, .map-card, .tracker-card { border: 1px solid var(--line-subtle); background: var(--paper-raise); border-radius: 20px; box-shadow: 0 16px 40px rgba(15, 23, 28, 0.05); backdrop-filter: blur(8px); }
     .hero { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 24px; margin-bottom: 24px; }
@@ -143,10 +155,14 @@
     .voice-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .voice-top b { font-size: 13px; color: var(--ink); }
     .voice-top span { display: block; font: 10px var(--font-mono); color: #2D6A4F; margin-top: 2px; }
-    .mic-button { border: 0; background: var(--leaf); color: #FFFFFF; border-radius: 9px; padding: 9px 14px; font-weight: 700; font-size: 11.5px; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 135, 90, 0.2); white-space: nowrap; }
-    .mic-button:hover:not(:disabled) { background: #006a45; }
+    .mic-button { border: 0; background: var(--leaf); color: #FFFFFF; border-radius: 9px; padding: 9px 14px; font-weight: 700; font-size: 11.5px; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 135, 90, 0.2); white-space: nowrap; transition: all 0.2s ease; }
+    .mic-button:hover:not(:disabled) { background: #006a45; transform: translateY(-1px); }
     .mic-button:disabled { opacity: 0.6; cursor: not-allowed; }
     .mic-button.recording { background: var(--danger); animation: pulse 1s infinite; box-shadow: 0 4px 12px rgba(222, 53, 11, 0.3); }
+    .text-input-toggle { transition: all 0.2s ease; }
+    .text-input-toggle:hover { background: #E6F4ED; border-color: var(--leaf); color: var(--leaf); }
+    #voiceTextInput { box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05); font-size: 13px !important; }
+    #voiceTextInput:focus { outline: none; border-color: var(--leaf); box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05), 0 0 0 2px rgba(0, 135, 90, 0.1); }
     .voice-text { display: none; margin-top: 10px; color: #1B4332; font: 11.5px/1.55 var(--font-mono); background: rgba(255, 255, 255, 0.6); padding: 8px 10px; border-radius: 8px; word-break: break-word; }
     .submit { border: 0; width: 100%; cursor: pointer; border-radius: 14px; margin-top: 20px; padding: 16px; background: var(--orange); color: #FFFFFF; font-weight: 800; font-size: 15px; letter-spacing: 0.2px; box-shadow: 0 12px 28px rgba(255, 85, 0, 0.3); }
     .submit:hover:not(:disabled) { background: #FF661A; transform: translateY(-1px); }
@@ -217,7 +233,7 @@
       </a>
       <nav class="nav">
         <span class="live-chip"><i class="live-dot"></i>NETWORK LIVE</span>
-        <a class="admin-link" href="/login" id="commandCenterLink">Command Center ↗</a>
+        <a class="admin-link" href="/admin" id="commandCenterLink">Command Center ↗</a>
       </nav>
     </header>
 
@@ -309,12 +325,15 @@
           </div>
         </div>
         <div class="field">
-          <label>Voice description <span>HINDI + ENGLISH</span></label>
+          <label>Description <span>OPTIONAL · VOICE OR TEXT</span></label>
           <div class="voice-panel">
             <div class="voice-top">
-              <div><b>Tell us what happened</b><span id="voiceState">tap to speak</span></div><button type="button" class="mic-button" id="micBtn">Start voice</button>
+              <div><b>Tell us what happened</b><span id="voiceState">tap to speak</span></div>
+              <button type="button" class="mic-button" id="micBtn">🎤 Voice</button>
             </div>
             <div class="voice-text" id="voiceOutput"></div>
+            <button type="button" class="text-input-toggle" id="textToggleBtn" style="display: none; margin-top: 10px; width: 100%; border: 1px solid #B8E3CD; background: #FFFFFF; color: #2D6A4F; border-radius: 9px; padding: 9px 12px; font-weight: 700; font-size: 11.5px; cursor: pointer;">📝 Type instead</button>
+            <textarea id="voiceTextInput" style="display: none; margin-top: 10px; width: 100%; border: 1px solid #B8E3CD; border-radius: 9px; padding: 10px; font-family: var(--font-mono); font-size: 12px; resize: vertical; min-height: 60px; max-height: 120px; font-size: 13px; color: #1B4332;" placeholder="Type your description (Hindi/English both work)"></textarea>
           </div>
         </div>
         <button class="submit" id="captureBtn">Analyze &amp; route report <span aria-hidden="true">→</span></button>
@@ -538,7 +557,164 @@
       }; 
       imagePreview.onerror = () => { alert('Could not load the selected image.'); }; 
     });
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition; if (SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'hi-IN'; recognition.interimResults = true; recognition.continuous = false; micBtn.addEventListener('click', () => { recordedText = ''; try { recognition.start(); } catch (e) { } }); recognition.onstart = () => { micBtn.textContent = 'Listening…'; micBtn.classList.add('recording'); voiceState.textContent = 'boliye, we are listening'; voiceOutput.style.display = 'block'; voiceOutput.textContent = 'Listening…'; }; recognition.onresult = e => { recordedText = Array.from(e.results).map(r => r[0].transcript).join(' '); voiceOutput.textContent = '"' + recordedText + '"'; }; recognition.onend = () => { micBtn.textContent = 'Record again'; micBtn.classList.remove('recording'); voiceState.textContent = recordedText ? 'voice note ready' : 'tap to speak'; }; recognition.onerror = (event) => { console.error('Speech recognition error:', event.error); voiceOutput.textContent = 'Error: ' + event.error; }; } else { micBtn.disabled = true; micBtn.textContent = 'Voice unavailable'; voiceState.textContent = 'voice needs Chrome'; }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let isRecognitionRunning = false;
+    let networkErrorCount = 0;
+    let autoRetryTimeout = null;
+    const MAX_NETWORK_RETRIES = 3;
+    
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+      
+      function startVoiceRecognition() {
+        recordedText = '';
+        voiceOutput.style.display = 'block';
+        voiceOutput.textContent = 'Initializing…';
+        try {
+          recognition.start();
+          isRecognitionRunning = true;
+        } catch (e) {
+          console.error('Error starting recognition:', e);
+          voiceOutput.textContent = 'Microphone not available. Click to type instead.';
+        }
+      }
+      
+      micBtn.addEventListener('click', () => {
+        if (isRecognitionRunning) {
+          try {
+            recognition.abort();
+            isRecognitionRunning = false;
+            if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
+          } catch (e) {
+            console.error('Error aborting recognition:', e);
+          }
+          return;
+        }
+        networkErrorCount = 0;
+        startVoiceRecognition();
+      });
+      
+      recognition.onstart = () => {
+        console.log('Speech recognition started');
+        micBtn.textContent = 'Stop listening';
+        micBtn.classList.add('recording');
+        voiceState.textContent = 'boliye, we are listening';
+        voiceOutput.style.display = 'block';
+        voiceOutput.textContent = 'Listening…';
+      };
+      
+      recognition.onresult = e => {
+        recordedText = Array.from(e.results).map(r => r[0].transcript).join(' ');
+        console.log('Recognized text:', recordedText);
+        voiceOutput.textContent = '"' + recordedText + '"';
+        networkErrorCount = 0;
+        if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
+      };
+      
+      recognition.onend = () => {
+        console.log('Speech recognition ended');
+        isRecognitionRunning = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = recordedText ? 'Record again' : 'Start voice';
+        voiceState.textContent = recordedText ? 'voice note ready ✓' : 'tap to speak';
+      };
+      
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        isRecognitionRunning = false;
+        if (autoRetryTimeout) clearTimeout(autoRetryTimeout);
+        
+        let errorMsg = 'Error: ' + event.error;
+        let isCritical = false;
+        let shouldRetry = false;
+        
+        if (event.error === 'no-speech') {
+          errorMsg = 'No speech detected. Speak louder or try again.';
+          shouldRetry = true;
+        } else if (event.error === 'network') {
+          networkErrorCount++;
+          shouldRetry = networkErrorCount <= MAX_NETWORK_RETRIES;
+          if (shouldRetry) {
+            const remainingTries = MAX_NETWORK_RETRIES - networkErrorCount + 1;
+            errorMsg = `Network connecting… (${remainingTries} auto-retry attempts left)`;
+            autoRetryTimeout = setTimeout(() => {
+              console.log('Auto-retrying voice recognition after network error...');
+              startVoiceRecognition();
+            }, 2000);
+          } else {
+            errorMsg = 'Network service temporarily unavailable. Use text input (click below) or try again in a moment.';
+            isCritical = true;
+          }
+        } else if (event.error === 'not-allowed') {
+          errorMsg = 'Microphone permission denied. Allow microphone access in browser settings.';
+          isCritical = true;
+        } else if (event.error === 'service-not-allowed') {
+          errorMsg = 'Speech service not available. Try: 1) HTTPS instead of HTTP, 2) Different browser (Chrome/Edge/Safari), 3) Text input below.';
+          isCritical = true;
+        } else if (event.error === 'audio-capture') {
+          errorMsg = 'Microphone not working. Check microphone connection and browser permissions.';
+          isCritical = true;
+        }
+        
+        voiceOutput.textContent = errorMsg;
+        micBtn.classList.remove('recording');
+        if (!shouldRetry) {
+          micBtn.textContent = isCritical ? 'Unavailable' : 'Try again';
+          if (isCritical) {
+            micBtn.style.opacity = '0.6';
+            micBtn.style.cursor = 'not-allowed';
+          }
+        } else {
+          micBtn.textContent = 'Retrying…';
+        }
+      };
+    } else {
+      console.warn('Speech Recognition API not supported');
+      micBtn.disabled = true;
+      micBtn.textContent = 'Voice unavailable';
+      voiceState.textContent = 'Use Chrome, Edge, or Safari';
+    }
+    
+    // Text input toggle functionality
+    const textToggleBtn = document.getElementById('textToggleBtn');
+    const voiceTextInput = document.getElementById('voiceTextInput');
+    
+    textToggleBtn.addEventListener('click', () => {
+      const isTextVisible = voiceTextInput.style.display === 'block';
+      voiceTextInput.style.display = isTextVisible ? 'none' : 'block';
+      textToggleBtn.textContent = isTextVisible ? '📝 Type instead' : '🎤 Back to voice';
+      if (!isTextVisible) voiceTextInput.focus();
+    });
+    
+    voiceTextInput.addEventListener('input', () => {
+      const text = voiceTextInput.value.trim();
+      if (text) {
+        recordedText = text;
+        voiceOutput.textContent = '"' + text + '"';
+        voiceState.textContent = 'text note ready ✓';
+      }
+    });
+    
+    // Show text toggle button when needed
+    micBtn.addEventListener('click', function() {
+      if (!isRecognitionRunning) {
+        setTimeout(() => {
+          textToggleBtn.style.display = 'block';
+        }, 500);
+      }
+    });
+    
+    voiceOutput.addEventListener('click', () => {
+      voiceTextInput.style.display = 'block';
+      textToggleBtn.style.display = 'block';
+      textToggleBtn.textContent = '🎤 Back to voice';
+      voiceTextInput.focus();
+    });
+    
     function getImageBlob() { return new Promise((resolve, reject) => { if (selectedFile) return resolve(selectedFile); if (!video.srcObject || !video.videoWidth) return reject(new Error('Please upload a photo or allow camera access.')); canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Could not capture the image.')), 'image/jpeg', 0.9); }); }
     function showJourney(status) { const levels = { Queued: 1, 'Priority Dispatch': 1, Assigned: 2, 'In Progress': 3, Resolved: 4, Closed: 4 }; const level = levels[status] || 1; document.querySelectorAll('#journey .journey-step').forEach((step, index) => step.classList.toggle('active', index < level)); }
     function openResult(data) { const ai = data.ai_analysis, ticket = data.ticket; document.getElementById('resultState').textContent = ticket.status.toUpperCase(); document.getElementById('ticketRef').textContent = ticket.reference; document.getElementById('resultTitle').textContent = `${ai.severity} priority report verified.`; document.getElementById('resultSubtitle').textContent = `${ticket.department} is now accountable for this ${ticket.zone} ticket.`; document.getElementById('riskScore').textContent = `${ai.risk_score}/100`; document.getElementById('confidenceScore').textContent = `${ai.confidence}%`; document.getElementById('qualityScore').textContent = `${ai.quality_score}%`; document.getElementById('resultSummary').textContent = ai.summary; showJourney(ticket.status); let route = `Save reference <b>${ticket.reference}</b> to track every stage of your complaint.<br>Queue: ${ticket.department} · Zone: ${ticket.zone}<br>Response target: ${ticket.eta} (${ticket.sla_minutes} min SLA)<br>Citizen reward: +${data.gamification.karma_earned} XP — ${data.gamification.badge}`; if (ticket.duplicate) route += `<br><span style="color:#B33B00">⚠ Nearby report detected: ${ticket.duplicate.reference} (${ticket.duplicate.distance}m away)</span>`; document.getElementById('resultRoute').innerHTML = route; resultOverlay.classList.add('show'); }

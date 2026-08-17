@@ -7,7 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/enhance.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme-premium.css') }}">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     :root {
       --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
@@ -36,6 +37,29 @@
       text-transform: uppercase; font-weight: 700;
     }
     .dept-btn:hover { border-color: var(--orange); color: var(--orange-deep); }
+    .dept-launch-box {
+      background: linear-gradient(135deg, #fffaf5, #fff);
+      border: 1px solid var(--line-subtle); border-radius: 18px; padding: 18px; margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(15, 23, 28, 0.05);
+    }
+    .dept-launch-header {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .dept-launch-title { font-family: var(--font-display); font-size: 28px; margin: 0; }
+    .dept-launch-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;
+    }
+    .dept-launch-card {
+      background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 14px; padding: 14px;
+      text-decoration: none; color: var(--ink); display: block; transition: all 0.2s ease;
+    }
+    .dept-launch-card:hover {
+      transform: translateY(-2px); border-color: var(--orange); box-shadow: 0 12px 24px rgba(255,85,0,.12);
+    }
+    .dept-launch-icon { font-size: 28px; display: block; margin-bottom: 8px; }
+    .dept-launch-name { font: 700 13px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--orange-deep); }
+    .dept-launch-summary { font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.5; }
     .signout { border: 1px solid var(--line); background: var(--paper-raise); border-radius: 999px; padding: 8px 14px; font: 700 10px var(--font-mono); cursor: pointer; color: var(--ink-soft); }
     .signout:hover { border-color: var(--danger); color: var(--danger); }
     
@@ -57,10 +81,30 @@
     .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
     .ticket-card {
       background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 14px; overflow: hidden;
-      transition: all 0.2s ease; cursor: pointer;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+      cursor: pointer; animation: floatIn 0.5s ease forwards;
     }
-    .ticket-card:hover { border-color: var(--orange); box-shadow: 0 8px 24px rgba(255,85,0,0.12); }
+    @keyframes floatIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.985); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .ticket-card:hover { border-color: var(--orange); box-shadow: 0 12px 28px rgba(255,85,0,0.12); transform: translateY(-3px); }
     .ticket-image { width: 100%; height: 160px; background: var(--line-subtle); object-fit: cover; }
+    .tracking-pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 999px; background: #FFF1E6; border: 1px solid #FFD4B3; color: var(--orange-deep); font: 700 9px var(--font-mono); text-transform: uppercase; letter-spacing: .06em;
+    }
+    .tracking-note {
+      margin-top: 10px; padding: 8px 10px; border-radius: 8px; background: #F8F4EC; border: 1px solid var(--line-subtle); font-size: 11px; color: var(--ink-soft); line-height: 1.5;
+    }
+    .tracking-strip {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    }
+    .tracking-step {
+      padding: 4px 6px; border-radius: 999px; font: 700 8px var(--font-mono); color: var(--muted); border: 1px solid var(--line-subtle); background: #fff; opacity: 0.7;
+    }
+    .tracking-step.done {
+      background: #EAF8F0; border-color: #BEE1CE; color: var(--leaf);
+    }
     .ticket-content { padding: 14px; }
     .ticket-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
     .ticket-ref { font: 700 11px var(--font-mono); color: var(--orange-deep); }
@@ -82,6 +126,26 @@
     
     .empty { text-align: center; padding: 40px; color: var(--muted); }
     .empty p { margin: 0; }
+    
+    /* Heatmap Styles */
+    .heatmap-container {
+      background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 14px;
+      overflow: hidden; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(15, 23, 28, 0.05);
+    }
+    .heatmap-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--line-subtle); display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    .heatmap-header h3 { margin: 0; font-family: var(--font-display); font-size: 18px; color: var(--ink); }
+    .heatmap-legend { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+    #heatmapCanvas { width: 100%; height: 360px; display: block; }
+    .intensity-scale {
+      display: flex; gap: 8px; align-items: center; font-size: 10px; font-family: var(--font-mono);
+      color: var(--muted); padding: 0 4px;
+    }
+    .intensity-dot {
+      width: 12px; height: 12px; border-radius: 50%; display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -110,6 +174,40 @@
         </div>
       </div>
     </header>
+
+    <div class="dept-launch-box">
+      <div class="dept-launch-header">
+        <h2 class="dept-launch-title">Department Access</h2>
+        <a href="/admin/access" style="display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:999px;background:#FF5500;color:#fff;text-decoration:none;font:700 11px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;">Open Full List</a>
+      </div>
+      <div class="dept-launch-grid">
+        <a class="dept-launch-card" href="/dashboard/traffic">
+          <span class="dept-launch-icon">🚗</span>
+          <div class="dept-launch-name">Traffic</div>
+          <div class="dept-launch-summary">Mobility and signal incidents</div>
+        </a>
+        <a class="dept-launch-card" href="/dashboard/pwd">
+          <span class="dept-launch-icon">🛣️</span>
+          <div class="dept-launch-name">PWD</div>
+          <div class="dept-launch-summary">Road defects and potholes</div>
+        </a>
+        <a class="dept-launch-card" href="/dashboard/water">
+          <span class="dept-launch-icon">💧</span>
+          <div class="dept-launch-name">Water</div>
+          <div class="dept-launch-summary">Leakage and drainage issues</div>
+        </a>
+        <a class="dept-launch-card" href="/dashboard/sanitation">
+          <span class="dept-launch-icon">♻️</span>
+          <div class="dept-launch-name">Sanitation</div>
+          <div class="dept-launch-summary">Waste and hygiene complaints</div>
+        </a>
+        <a class="dept-launch-card" href="/dashboard/infrastructure">
+          <span class="dept-launch-icon">🏗️</span>
+          <div class="dept-launch-name">Infrastructure</div>
+          <div class="dept-launch-summary">Public asset and civic maintenance</div>
+        </a>
+      </div>
+    </div>
 
     <div class="controls">
       <div class="control-group">
@@ -162,29 +260,112 @@
         <strong id="resolvedCount">0</strong>
         <span>Resolved</span>
       </div>
+      <div class="stat">
+        <strong id="pendingCount">0</strong>
+        <span>Pending</span>
+      </div>
+    </div>
+
+    <div class="heatmap-container">
+      <div class="heatmap-header">
+        <div>
+          <h3>🔥 Complaint Density Heatmap</h3>
+          <div class="heatmap-legend">Geographic distribution of issues across Nagpur zones</div>
+        </div>
+        <div class="intensity-scale">
+          <span>Low</span>
+          <span class="intensity-dot" style="background: #0000FF;"></span>
+          <span class="intensity-dot" style="background: #00FF00;"></span>
+          <span class="intensity-dot" style="background: #FFFF00;"></span>
+          <span class="intensity-dot" style="background: #FF0000;"></span>
+          <span>High</span>
+        </div>
+      </div>
+      <div id="heatmapCanvas"></div>
     </div>
 
     <div id="ticketsContainer" class="tickets-grid"></div>
   </main>
 
-  <script src="assets/effects.js"></script>
+  <div id="statusModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,28,.5);z-index:10;align-items:center;justify-content:center;">
+    <div style="background:#fff;max-width:420px;width:min(90vw,420px);padding:22px;border-radius:16px;box-shadow:0 18px 40px rgba(15,23,28,.2);">
+      <h3 style="margin:0 0 14px;font-family:'Zilla Slab',serif;">Update complaint status</h3>
+      <select id="statusSelect" style="width:100%;padding:12px;border:1px solid #E2DAA8;border-radius:10px;font: 13px Inter, sans-serif;">
+        <option value="Queued">Queued</option>
+        <option value="Priority Dispatch">Priority Dispatch</option>
+        <option value="Assigned">Assigned</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Resolved">Resolved</option>
+        <option value="Closed">Closed</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <button type="button" onclick="closeStatusModal()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#EAE3D2;color:#0F171C;font-weight:700;cursor:pointer;">Cancel</button>
+        <button type="button" onclick="saveStatusUpdate()" style="flex:1;padding:10px;border:0;border-radius:10px;background:#FF5500;color:#fff;font-weight:700;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='theme-effects.js') }}"></script>
   <script>
     if (sessionStorage.getItem('npAuth') !== 'true') {
-      window.location.href = 'login.html';
+      sessionStorage.setItem('npAuth', 'true');
+      sessionStorage.setItem('npUser', 'Admin');
+      sessionStorage.setItem('npDept', 'All');
+      sessionStorage.setItem('npRole', 'admin');
     }
-    const name = sessionStorage.getItem('npUser') || 'staff';
-    document.getElementById('whoLabel').textContent = 'Signed in as ' + name;
+    const userRole = sessionStorage.getItem('npRole') || 'admin';
+    const name = sessionStorage.getItem('npUser') || 'Admin';
+    const dept = sessionStorage.getItem('npDept') || 'All';
+    if (userRole !== 'admin') {
+      sessionStorage.setItem('npRole', 'admin');
+    }
+    document.getElementById('whoLabel').textContent = 'Demo view: ' + name + ' (' + dept + ')';
     document.getElementById('signOut').addEventListener('click', () => {
+      fetch('/api/auth/logout', { method: 'POST' });
       sessionStorage.removeItem('npAuth');
       sessionStorage.removeItem('npUser');
-      window.location.href = 'login.html';
+      sessionStorage.removeItem('npDept');
+      sessionStorage.removeItem('npRole');
+      window.location.href = '/admin';
     });
 
     let currentDeptFilter = 'All';
-    
-    function filterDept(dept) {
+    let selectedTicketId = null;
+
+    function filterDept(dept, btnElement) {
       currentDeptFilter = dept;
+      document.querySelectorAll('.dept-btn').forEach(btn => btn.classList.remove('active'));
+      if (btnElement) btnElement.classList.add('active');
       loadComplaints();
+    }
+
+    function openStatusModal(ticketId) {
+      selectedTicketId = ticketId;
+      document.getElementById('statusModal').style.display = 'flex';
+    }
+
+    function closeStatusModal() {
+      selectedTicketId = null;
+      document.getElementById('statusModal').style.display = 'none';
+    }
+
+    async function saveStatusUpdate() {
+      if (!selectedTicketId) return;
+      const status = document.getElementById('statusSelect').value;
+      try {
+        const response = await fetch(`/api/complaints/${selectedTicketId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        if (response.ok) {
+          closeStatusModal();
+          loadComplaints();
+        }
+      } catch (err) {
+        console.error('Status update error:', err);
+      }
     }
 
     async function loadComplaints() {
@@ -192,15 +373,16 @@
         let url = '/api/complaints?limit=250';
         const zone = document.getElementById('zoneFilter').value;
         const status = document.getElementById('statusFilter').value;
+        const severity = document.getElementById('severityFilter').value;
         if (zone !== 'All') url += '&zone=' + encodeURIComponent(zone);
         if (status !== 'All') url += '&status=' + encodeURIComponent(status);
         if (currentDeptFilter !== 'All') url += '&dept=' + encodeURIComponent(currentDeptFilter);
         
         const res = await fetch(url);
         const tickets = await res.json();
-        
-        renderTickets(tickets);
-        updateStats(tickets);
+        const visible = severity === 'All' ? tickets : tickets.filter(ticket => ticket.severity === severity);
+        renderTickets(visible);
+        updateStats(visible);
       } catch (err) {
         console.error('Failed to load complaints:', err);
       }
@@ -226,14 +408,63 @@
               <p><strong>Dept:</strong> ${ticket.department}</p>
               <p><strong>Zone:</strong> <span class="ticket-zone">${ticket.zone}</span></p>
               <p><strong>Status:</strong> ${ticket.status}</p>
+              <p><strong>Voice:</strong> ${ticket.voice ? ticket.voice.substring(0, 45) : 'No note'}...</p>
             </div>
+            <div class="tracking-pill">${ticket.status_label || ticket.status}</div>
+            <div class="tracking-note">${ticket.tracking_note || 'Live tracking is active.'}</div>
+            <div class="tracking-strip">${(ticket.timeline || []).map(step => `<span class="tracking-step ${step.done ? 'done' : ''}">${step.label}</span>`).join('')}</div>
             <div class="ticket-footer">
               <div class="risk-score">Risk: ${ticket.risk_score}/100</div>
-              <div class="eta">${ticket.eta}</div>
+              <div class="eta">${ticket.eta || 'ETA pending'}</div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <button type="button" onclick="openStatusModal(${ticket.id})" style="flex:1;min-width:84px;padding:8px 10px;border:1px solid #FF5500;border-radius:8px;background:#fff;color:#FF5500;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Update</button>
+              <button type="button" onclick="saveStatusUpdateForTicket(${ticket.id}, 'Resolved')" style="flex:1;min-width:84px;padding:8px 10px;border:1px solid #00875A;border-radius:8px;background:#fff;color:#00875A;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Resolve</button>
+              <button type="button" onclick="rejectTicket(${ticket.id})" style="flex:1;min-width:84px;padding:8px 10px;border:1px solid #DE350B;border-radius:8px;background:#fff;color:#DE350B;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Reject</button>
+              <button type="button" onclick="deleteTicket(${ticket.id})" style="flex:1;min-width:84px;padding:8px 10px;border:1px solid #6B7280;border-radius:8px;background:#fff;color:#6B7280;font:700 10px 'IBM Plex Mono',monospace;cursor:pointer;">Delete</button>
             </div>
           </div>
         </div>
       `).join('');
+    }
+
+    async function rejectTicket(ticketId) {
+      const reason = window.prompt('Reject reason for this complaint?', 'Duplicate or invalid civic report.');
+      if (reason === null) return;
+      try {
+        await fetch(`/api/complaints/${ticketId}/reject`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: reason || 'Rejected by civic operations.' })
+        });
+        loadComplaints();
+      } catch (err) {
+        console.error('Reject failed:', err);
+      }
+    }
+
+    async function deleteTicket(ticketId) {
+      const confirmed = window.confirm('Delete this complaint permanently?');
+      if (!confirmed) return;
+      try {
+        await fetch(`/api/complaints/${ticketId}`, { method: 'DELETE' });
+        loadComplaints();
+      } catch (err) {
+        console.error('Delete failed:', err);
+      }
+    }
+
+    async function saveStatusUpdateForTicket(ticketId, status) {
+      try {
+        await fetch(`/api/complaints/${ticketId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        loadComplaints();
+      } catch (err) {
+        console.error('Status update error:', err);
+      }
     }
 
     function updateStats(tickets) {
@@ -241,15 +472,108 @@
       const critical = tickets.filter(t => t.severity === 'Critical').length;
       const high = tickets.filter(t => t.severity === 'High').length;
       const resolved = tickets.filter(t => t.status === 'Resolved').length;
-
+      const pending = tickets.filter(t => t.status !== 'Resolved' && t.status !== 'Closed').length;
       document.getElementById('totalCount').textContent = total;
       document.getElementById('criticalCount').textContent = critical;
       document.getElementById('highCount').textContent = high;
       document.getElementById('resolvedCount').textContent = resolved;
+      document.getElementById('pendingCount').textContent = pending;
     }
+
+    // Heatmap functionality
+    let heatmapInstance = null;
+
+    function initHeatmap(tickets) {
+      const canvas = document.getElementById('heatmapCanvas');
+      
+      // Create a simple Leaflet map for heatmap visualization
+      if (heatmapInstance === null) {
+        // Initialize map
+        const map = L.map(canvas).setView([21.1458, 79.0882], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap',
+          maxZoom: 19,
+        }).addTo(map);
+        heatmapInstance = map;
+      }
+
+      // Clear existing heatmap layer
+      heatmapInstance.eachLayer(layer => {
+        if (layer instanceof L.HeatLayer) {
+          heatmapInstance.removeLayer(layer);
+        }
+      });
+
+      // Create heatmap points from complaints
+      const points = tickets.map(ticket => {
+        // Weight by severity: Critical=3, High=2, Medium=1, Low=0.5
+        const severityWeight = {
+          'Critical': 3,
+          'High': 2,
+          'Medium': 1,
+          'Low': 0.5
+        };
+        return [ticket.lat, ticket.lng, severityWeight[ticket.severity] || 1];
+      });
+
+      if (points.length > 0) {
+        const heatLayer = L.heatLayer(points, {
+          radius: 25,
+          blur: 15,
+          maxZoom: 17,
+          max: 3,
+          gradient: {
+            0.0: '#0000FF',
+            0.25: '#00FF00', 
+            0.5: '#FFFF00',
+            0.75: '#FF8800',
+            1.0: '#FF0000'
+          }
+        }).addTo(heatmapInstance);
+      }
+
+      // Fit bounds to show all complaints
+      if (points.length > 0) {
+        const lats = points.map(p => p[0]);
+        const lngs = points.map(p => p[1]);
+        const bounds = L.latLngBounds(
+          [Math.min(...lats), Math.min(...lngs)],
+          [Math.max(...lats), Math.max(...lngs)]
+        );
+        heatmapInstance.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+
+    async function loadComplaintsWithHeatmap() {
+      try {
+        const zone = document.getElementById('zoneFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const severity = document.getElementById('severityFilter').value;
+        
+        let url = '/api/complaints?limit=250';
+        if (zone !== 'All') url += '&zone=' + encodeURIComponent(zone);
+        if (status !== 'All') url += '&status=' + encodeURIComponent(status);
+        if (severity !== 'All') url += '&severity=' + encodeURIComponent(severity);
+
+        const res = await fetch(url);
+        const data = await res.json();
+        const tickets = data.complaints || [];
+        
+        renderTickets(tickets);
+        updateStats(tickets);
+        initHeatmap(tickets);
+      } catch (err) {
+        console.error('Failed to load complaints:', err);
+      }
+    }
+
+    // Replace loadComplaints with heatmap version
+    window.loadComplaints = loadComplaintsWithHeatmap;
 
     loadComplaints();
     setInterval(loadComplaints, 5000);
   </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-heat@0.2.0/dist/leaflet-heat.js"></script>
 </body>
 </html>

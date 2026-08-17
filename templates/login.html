@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/enhance.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='theme-premium.css') }}">
   <style>
     :root {
       --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
@@ -179,12 +179,11 @@
       <div class="demo-note">Run the local backend (<b>python3 backend/app.py</b>) and this signs in against a real
         SQLite database at <b>/api/auth/login</b>. No backend running? Falls back to the demo account
         <b>admin</b> / <b>pulse2026</b>.</div>
-      <div class="switch-line" style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted)">New here? <a href="signup.html" style="color:var(--orange-deep);font-weight:700;text-decoration:none">Create an account</a></div>
       <a class="back-link" href="index.html">← Back to citizen report</a>
     </div>
   </div>
 
-  <script src="assets/effects.js"></script>
+  <script src="{{ url_for('static', filename='theme-effects.js') }}"></script>
   <script>
     const form = document.getElementById('loginForm');
     const username = document.getElementById('username');
@@ -195,8 +194,6 @@
     const formErrorText = document.getElementById('formErrorText');
     const togglePw = document.getElementById('togglePw');
 
-    // Demo-mode fallback so this page is testable before a real backend
-    // exists. Any deployed /api/auth/login endpoint always takes priority.
     const DEMO_USER = 'admin';
     const DEMO_PASS = 'pulse2026';
 
@@ -219,15 +216,28 @@
       formError.classList.remove('show');
     }
 
-    function completeLogin(name) {
+    function getDashboardForUser(department, role) {
+      if (role === 'admin') return 'admin_dashboard.html';
+      if (department === 'Traffic') return 'dashboard_traffic.html';
+      if (department === 'PWD') return 'dashboard_pwd.html';
+      if (department === 'Water') return 'dashboard_water.html';
+      if (department === 'Sanitation') return 'dashboard_sanitation.html';
+      if (department === 'Infrastructure') return 'dashboard_infrastructure.html';
+      return 'admin_dashboard.html';
+    }
+
+    function completeLogin(name, department = 'All', role = 'admin') {
       sessionStorage.setItem('npAuth', 'true');
       sessionStorage.setItem('npUser', name);
+      sessionStorage.setItem('npDept', department);
+      sessionStorage.setItem('npRole', role);
       if (document.getElementById('remember').checked) {
         localStorage.setItem('npRememberUser', name);
       }
       submitLabel.textContent = 'Success — redirecting…';
       if (window.npCelebrate) window.npCelebrate(window.innerWidth / 2, window.innerHeight / 2);
-      setTimeout(() => { window.location.href = 'admin_dashboard.html'; }, 260);
+      const targetPage = getDashboardForUser(department, role);
+      setTimeout(() => { window.location.href = targetPage; }, 260);
     }
 
     form.addEventListener('submit', async (e) => {
@@ -249,13 +259,10 @@
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Invalid username or password.');
-        completeLogin(data.username || user);
+        completeLogin(data.username || user, data.department || 'All', data.role || (user === DEMO_USER ? 'admin' : 'lead'));
       } catch (err) {
-        // No backend reachable yet (typical when opening this file
-        // directly) — fall back to the documented demo account instead
-        // of dead-ending the flow.
         if (user === DEMO_USER && pass === DEMO_PASS) {
-          completeLogin(user);
+          completeLogin(user, 'All', 'admin');
           return;
         }
         showError(err instanceof TypeError ? 'Invalid username or password.' : (err.message || 'Could not sign in. Please try again.'));

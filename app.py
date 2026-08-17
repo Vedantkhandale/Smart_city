@@ -31,9 +31,17 @@ socketio = SocketIO(
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # 🔐 Command Center demo credentials (hackathon-only — swap for a real user table / SSO later).
-# Format: username -> {"password": ..., "display_name": ...}
+# Format: username -> {"password": ..., "display_name": ..., "department": ..., "role": ...}
 COMMAND_CENTER_USERS = {
-    "admin": {"password": os.getenv("ADMIN_PASSWORD", "pulse2026"), "display_name": "Admin"},
+    # Admin - sees everything
+    "admin": {"password": os.getenv("ADMIN_PASSWORD", "pulse2026"), "display_name": "Admin", "department": "All", "role": "admin"},
+    
+    # Department Heads
+    "traffic_lead": {"password": "traffic123", "display_name": "Traffic Police Lead", "department": "Traffic", "role": "lead"},
+    "pwd_chief": {"password": "pwd456", "display_name": "PWD Roads Chief", "department": "PWD", "role": "lead"},
+    "water_lead": {"password": "water789", "display_name": "Water Works Lead", "department": "Water", "role": "lead"},
+    "sanitation_lead": {"password": "sanitation321", "display_name": "Sanitation Lead", "department": "Sanitation", "role": "lead"},
+    "infra_lead": {"password": "infra654", "display_name": "Infrastructure Lead", "department": "Infrastructure", "role": "lead"},
 }
 
 # ✨ Enhanced category configuration with detailed issue types
@@ -238,7 +246,25 @@ def find_duplicate(lat, lng, category):
 
 
 def serialize_ticket(ticket):
-    return dict(ticket)
+    if not ticket:
+        return {}
+    data = dict(ticket)
+    status = data.get("status") or "Queued"
+    data["status_label"] = status
+    data["is_rejected"] = status == "Rejected"
+    data["is_resolved"] = status in {"Resolved", "Closed"}
+    data["timeline"] = [
+        {"label": "Submitted", "done": True, "time": data.get("created_at")},
+        {"label": "Verified", "done": status in {"Queued", "Priority Dispatch", "Assigned", "In Progress", "Resolved", "Closed", "Rejected"}, "time": data.get("updated_at")},
+        {"label": "Assigned", "done": status in {"Assigned", "In Progress", "Resolved", "Closed", "Rejected"}, "time": data.get("updated_at")},
+        {"label": "In Progress", "done": status in {"In Progress", "Resolved", "Closed", "Rejected"}, "time": data.get("updated_at")},
+        {"label": "Resolved", "done": status in {"Resolved", "Closed"}, "time": data.get("updated_at")},
+    ]
+    data["tracking_note"] = (
+        "Rejected by civic operations." if status == "Rejected"
+        else f"Current stage: {status}. Response target {data.get('eta', '—')}"
+    )
+    return data
 
 
 def broadcast_ticket_event(event_name, ticket):
@@ -354,20 +380,43 @@ def build_predictive_signals():
 # 🔐 Command Center auth (hackathon-simple session auth — swap for real auth later)
 # ---------------------------------------------------------------------------
 
+def ensure_demo_session():
+    if session.get("np_user"):
+        return
+    session["np_user"] = "admin"
+    session["np_department"] = "All"
+    session["np_role"] = "admin"
+
+
 def login_required(view_fn):
     @wraps(view_fn)
     def wrapped(*args, **kwargs):
-        if not session.get("np_user"):
-            return redirect(url_for("login_page"))
+        ensure_demo_session()
         return view_fn(*args, **kwargs)
     return wrapped
+
+
+def user_dashboard_route(username=None):
+    user = COMMAND_CENTER_USERS.get(username or session.get("np_user"), {})
+    if user.get("role") == "admin":
+        return "admin_dashboard"
+    department = user.get("department")
+    mapping = {
+        "Traffic": "traffic_dashboard",
+        "PWD": "pwd_dashboard",
+        "Water": "water_dashboard",
+        "Sanitation": "sanitation_dashboard",
+        "Infrastructure": "infrastructure_dashboard",
+    }
+    return mapping.get(department, "admin_dashboard")
 
 
 @app.route("/login")
 def login_page():
     if session.get("np_user"):
-        return redirect(url_for("admin_dashboard"))
-    return render_template("login.html")
+        return redirect(url_for(user_dashboard_route()))
+    ensure_demo_session()
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -379,14 +428,18 @@ def api_login():
     if not user or user["password"] != password:
         return jsonify({"error": "Invalid username or password."}), 401
     session["np_user"] = username
+    session["np_department"] = user.get("department", "All")
+    session["np_role"] = user.get("role", "staff")
     if payload.get("remember"):
         session.permanent = True
-    return jsonify({"message": "Signed in.", "username": user["display_name"]})
+    return jsonify({"message": "Signed in.", "username": user["display_name"], "department": user.get("department", "All"), "role": user.get("role", "staff")})
 
 
 @app.route("/api/auth/logout", methods=["POST"])
 def api_logout():
     session.pop("np_user", None)
+    session.pop("np_department", None)
+    session.pop("np_role", None)
     return jsonify({"message": "Signed out."})
 
 
@@ -398,36 +451,59 @@ def index():
 @app.route("/admin")
 @login_required
 def admin_dashboard():
+    ensure_demo_session()
+    if session.get("np_user") and session.get("np_role") != "admin":
+        route = user_dashboard_route(session.get("np_user"))
+        return redirect(url_for(route))
     return render_template("admin_dashboard.html")
+
+
+@app.route("/admin/access")
+@login_required
+def admin_department_access():
+    ensure_demo_session()
+    departments = [
+        {"name": "Traffic", "route": "/dashboard/traffic", "icon": "🚗", "summary": "Signal, traffic flow and mobility incidents"},
+        {"name": "PWD", "route": "/dashboard/pwd", "icon": "🛣️", "summary": "Road damage, potholes, surface defects"},
+        {"name": "Water", "route": "/dashboard/water", "icon": "💧", "summary": "Leakage, drainage and water supply faults"},
+        {"name": "Sanitation", "route": "/dashboard/sanitation", "icon": "♻️", "summary": "Garbage, hygiene and waste dumping issues"},
+        {"name": "Infrastructure", "route": "/dashboard/infrastructure", "icon": "🏗️", "summary": "Street lights, benches, poles and civic assets"},
+    ]
+    return render_template("admin_department_access.html", departments=departments)
 
 
 @app.route("/dashboard/traffic")
 @login_required
 def traffic_dashboard():
+    ensure_demo_session()
     return render_template("dashboard_traffic.html")
 
 
 @app.route("/dashboard/pwd")
 @login_required
 def pwd_dashboard():
+    ensure_demo_session()
     return render_template("dashboard_pwd.html")
 
 
 @app.route("/dashboard/water")
 @login_required
 def water_dashboard():
+    ensure_demo_session()
     return render_template("dashboard_water.html")
 
 
 @app.route("/dashboard/sanitation")
 @login_required
 def sanitation_dashboard():
+    ensure_demo_session()
     return render_template("dashboard_sanitation.html")
 
 
 @app.route("/dashboard/infrastructure")
 @login_required
 def infrastructure_dashboard():
+    ensure_demo_session()
     return render_template("dashboard_infrastructure.html")
 
 
@@ -580,7 +656,7 @@ def submit_report():
 @app.route("/api/complaints/<int:ticket_id>/status", methods=["PATCH"])
 def update_complaint_status(ticket_id):
     status = (request.get_json(silent=True) or {}).get("status")
-    valid_statuses = {"Queued", "Priority Dispatch", "Assigned", "In Progress", "Resolved", "Closed"}
+    valid_statuses = {"Queued", "Priority Dispatch", "Assigned", "In Progress", "Resolved", "Closed", "Rejected"}
     if status not in valid_statuses:
         return jsonify({"error": "Choose a valid ticket status."}), 400
     with get_db() as db:
@@ -591,6 +667,29 @@ def update_complaint_status(ticket_id):
     ticket = serialize_ticket(row)
     broadcast_ticket_event("ticket:updated", ticket)
     return jsonify(ticket)
+
+
+@app.route("/api/complaints/<int:ticket_id>/reject", methods=["PATCH"])
+def reject_complaint(ticket_id):
+    payload = request.get_json(silent=True) or {}
+    reason = (payload.get("reason") or "Rejected by civic operations.").strip()[:200]
+    with get_db() as db:
+        result = db.execute("UPDATE complaints SET status = ?, ai_summary = COALESCE(ai_summary, '') || ?, updated_at = ? WHERE id = ?", ("Rejected", f" | Rejected: {reason}", utcnow(), ticket_id))
+        if result.rowcount == 0:
+            return jsonify({"error": "Ticket not found."}), 404
+        row = db.execute("SELECT * FROM complaints WHERE id = ?", (ticket_id,)).fetchone()
+    ticket = serialize_ticket(row)
+    broadcast_ticket_event("ticket:updated", ticket)
+    return jsonify(ticket)
+
+
+@app.route("/api/complaints/<int:ticket_id>", methods=["DELETE"])
+def delete_complaint(ticket_id):
+    with get_db() as db:
+        result = db.execute("DELETE FROM complaints WHERE id = ?", (ticket_id,))
+        if result.rowcount == 0:
+            return jsonify({"error": "Ticket not found."}), 404
+    return jsonify({"success": True, "deleted_id": ticket_id})
 
 
 @app.route("/api/department-tickets")
