@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Nagpur Pulse | Admin Command Center</title>
+  <title>Nagpur Pulse | Traffic Police Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,13 +29,12 @@
     .brand b { font-family: var(--font-display); font-weight: 900; font-size: 18px; }
     .brand small { display: block; font-family: var(--font-mono); font-size: 8px; letter-spacing: 1.4px; color: var(--orange); }
     .top-right { display: flex; gap: 16px; align-items: center; }
-    .dept-nav { display: flex; gap: 8px; flex-wrap: wrap; }
-    .dept-btn {
+    .nav-back {
       border: 1px solid var(--line); background: var(--paper-raise); padding: 8px 12px; border-radius: 8px;
       font: 10px var(--font-mono); cursor: pointer; color: var(--ink-soft); transition: all 0.2s ease;
-      text-transform: uppercase; font-weight: 700;
+      text-transform: uppercase; font-weight: 700; text-decoration: none;
     }
-    .dept-btn:hover { border-color: var(--orange); color: var(--orange-deep); }
+    .nav-back:hover { border-color: var(--orange); color: var(--orange-deep); }
     .signout { border: 1px solid var(--line); background: var(--paper-raise); border-radius: 999px; padding: 8px 14px; font: 700 10px var(--font-mono); cursor: pointer; color: var(--ink-soft); }
     .signout:hover { border-color: var(--danger); color: var(--danger); }
     
@@ -46,7 +45,6 @@
       padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: 11px var(--font-body); background: var(--paper-raise);
       color: var(--ink);
     }
-    .control-group select:focus, .control-group input:focus { border-color: var(--orange); outline: none; }
     
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
     .stat { background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 12px; padding: 16px;
@@ -69,15 +67,11 @@
       background: var(--orange-tint); color: var(--orange-deep);
     }
     .ticket-severity.critical { background: #FDECEA; color: var(--danger); }
-    .ticket-severity.high { background: #FFF0E6; color: var(--orange-deep); }
     .ticket-info { font-size: 12px; }
     .ticket-info p { margin: 4px 0; color: var(--ink-soft); }
-    .ticket-category { font: 700 11px var(--font-mono); color: var(--leaf); margin-bottom: 8px; }
     .ticket-zone { color: var(--muted); font-size: 11px; }
     .ticket-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--line-subtle); }
-    .risk-score {
-      font: 700 12px var(--font-display); color: var(--orange-deep);
-    }
+    .risk-score { font: 700 12px var(--font-display); color: var(--orange-deep); }
     .eta { font: 9px var(--font-mono); color: var(--muted); }
     
     .empty { text-align: center; padding: 40px; color: var(--muted); }
@@ -93,17 +87,10 @@
           <circle cx="24" cy="24" r="16.5" fill="#FFF0E6" stroke="#B33B00" stroke-width="1.2"/>
           <path d="M14 27h5l3-10 6 18 3-9h7" stroke="#0F171C" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span><b>Nagpur Pulse</b><small>ADMIN CONTROL</small></span>
+        <span><b>Nagpur Pulse</b><small>TRAFFIC POLICE</small></span>
       </div>
       <div class="top-right">
-        <div class="dept-nav">
-          <button class="dept-btn" onclick="filterDept('All')">All Departments</button>
-          <button class="dept-btn" onclick="filterDept('Traffic')">🚗 Traffic</button>
-          <button class="dept-btn" onclick="filterDept('PWD')">🛣️ PWD</button>
-          <button class="dept-btn" onclick="filterDept('Water')">💧 Water</button>
-          <button class="dept-btn" onclick="filterDept('Sanitation')">🧹 Sanitation</button>
-          <button class="dept-btn" onclick="filterDept('Infrastructure')">🏗️ Infrastructure</button>
-        </div>
+        <a href="admin_dashboard.html" class="nav-back">← Back to Admin</a>
         <div style="display: flex; gap: 12px; align-items: center;">
           <span id="whoLabel" style="font: 11px var(--font-mono); color: var(--ink-soft);"></span>
           <button class="signout" id="signOut">Sign out</button>
@@ -133,30 +120,20 @@
           <option value="Resolved">Resolved</option>
         </select>
       </div>
-      <div class="control-group">
-        <label for="severityFilter">Severity:</label>
-        <select id="severityFilter" onchange="loadComplaints()">
-          <option value="All">All Severity</option>
-          <option value="Critical">Critical</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-      </div>
     </div>
 
     <div class="stats">
       <div class="stat">
         <strong id="totalCount">0</strong>
-        <span>Total Reports</span>
+        <span>Traffic Reports</span>
       </div>
       <div class="stat">
         <strong id="criticalCount">0</strong>
         <span>Critical</span>
       </div>
       <div class="stat">
-        <strong id="highCount">0</strong>
-        <span>High Priority</span>
+        <strong id="pendingCount">0</strong>
+        <span>Pending</span>
       </div>
       <div class="stat">
         <strong id="resolvedCount">0</strong>
@@ -180,21 +157,13 @@
       window.location.href = 'login.html';
     });
 
-    let currentDeptFilter = 'All';
-    
-    function filterDept(dept) {
-      currentDeptFilter = dept;
-      loadComplaints();
-    }
-
     async function loadComplaints() {
       try {
-        let url = '/api/complaints?limit=250';
+        let url = '/api/complaints?limit=250&dept=Traffic';
         const zone = document.getElementById('zoneFilter').value;
         const status = document.getElementById('statusFilter').value;
         if (zone !== 'All') url += '&zone=' + encodeURIComponent(zone);
         if (status !== 'All') url += '&status=' + encodeURIComponent(status);
-        if (currentDeptFilter !== 'All') url += '&dept=' + encodeURIComponent(currentDeptFilter);
         
         const res = await fetch(url);
         const tickets = await res.json();
@@ -209,7 +178,7 @@
     function renderTickets(tickets) {
       const container = document.getElementById('ticketsContainer');
       if (tickets.length === 0) {
-        container.innerHTML = '<div class="empty" style="grid-column: 1/-1;"><p>No complaints found</p></div>';
+        container.innerHTML = '<div class="empty" style="grid-column: 1/-1;"><p>No traffic reports at this time</p></div>';
         return;
       }
 
@@ -221,11 +190,10 @@
               <span class="ticket-ref">${ticket.reference}</span>
               <span class="ticket-severity ${ticket.severity.toLowerCase()}">${ticket.severity}</span>
             </div>
-            <div class="ticket-category">${ticket.category}</div>
             <div class="ticket-info">
-              <p><strong>Dept:</strong> ${ticket.department}</p>
               <p><strong>Zone:</strong> <span class="ticket-zone">${ticket.zone}</span></p>
               <p><strong>Status:</strong> ${ticket.status}</p>
+              <p><strong>Voice Note:</strong> ${ticket.voice.substring(0, 40)}...</p>
             </div>
             <div class="ticket-footer">
               <div class="risk-score">Risk: ${ticket.risk_score}/100</div>
@@ -239,12 +207,12 @@
     function updateStats(tickets) {
       const total = tickets.length;
       const critical = tickets.filter(t => t.severity === 'Critical').length;
-      const high = tickets.filter(t => t.severity === 'High').length;
+      const pending = tickets.filter(t => t.status !== 'Resolved').length;
       const resolved = tickets.filter(t => t.status === 'Resolved').length;
 
       document.getElementById('totalCount').textContent = total;
       document.getElementById('criticalCount').textContent = critical;
-      document.getElementById('highCount').textContent = high;
+      document.getElementById('pendingCount').textContent = pending;
       document.getElementById('resolvedCount').textContent = resolved;
     }
 

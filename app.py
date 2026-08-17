@@ -401,6 +401,36 @@ def admin_dashboard():
     return render_template("admin_dashboard.html")
 
 
+@app.route("/dashboard/traffic")
+@login_required
+def traffic_dashboard():
+    return render_template("dashboard_traffic.html")
+
+
+@app.route("/dashboard/pwd")
+@login_required
+def pwd_dashboard():
+    return render_template("dashboard_pwd.html")
+
+
+@app.route("/dashboard/water")
+@login_required
+def water_dashboard():
+    return render_template("dashboard_water.html")
+
+
+@app.route("/dashboard/sanitation")
+@login_required
+def sanitation_dashboard():
+    return render_template("dashboard_sanitation.html")
+
+
+@app.route("/dashboard/infrastructure")
+@login_required
+def infrastructure_dashboard():
+    return render_template("dashboard_infrastructure.html")
+
+
 @app.route("/api/complaints")
 def get_complaints():
     zone, department, status = request.args.get("zone", "All"), request.args.get("dept", "All"), request.args.get("status", "All")
@@ -675,6 +705,20 @@ def get_department_tickets():
 @app.errorhandler(RequestEntityTooLarge)
 def handle_large_file(_error):
     return jsonify({"error": "Image is larger than 12 MB. Please use a smaller photo."}), 413
+
+
+@app.errorhandler(500)
+def handle_server_error(_error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "The server could not process this request. Please try again."}), 500
+    return "Internal Server Error", 500
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Unexpected server error. Please try again."}), 500
+    return "Internal Server Error", 500
 
 
 init_db()
