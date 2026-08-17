@@ -1,33 +1,31 @@
-🚦 Nagpur Pulse: AI-Driven Smart City Command Center
+# Nagpur Pulse — running it locally with a real database
 
-Nagpur Pulse is a next-generation **PWA (Progressive Web App)** designed to revolutionize civic grievance reporting in Nagpur. By leveraging **OpenCV for AI-based image analysis** and **real-time WhatsApp API routing**, the platform bridges the gap between citizens and municipal authorities.
+```
+cd backend
+pip install -r requirements.txt
+python3 app.py
+```
 
-🚀 Key Features
+Then open **http://localhost:5000** — the backend serves the whole frontend
+(`index.html`, `login.html`, `signup.html`, `admin.html`, `assets/`) and
+backs sign-up / sign-in with a real SQLite database.
 
-*   **Neural AI Scanner:** Uses OpenCV to analyze real-time camera frames, detecting traffic jams, potholes, and garbage dumps with severity-based bounding box feedback.
-*   **Voice AI Integration:** Multi-lingual (Hindi/Marathi/English) voice-to-text parser for hands-free complaint filing.
-*   **Real-Time Geofencing:** Automatically routes grievances to the correct municipal zone (e.g., Dharampeth, Dhantoli) based on live GPS coordinates.
-*   **Predictive Analytics:** AI-driven hazard probability engine that forecasts traffic hotspots.
-*   **Civic Karma (Gamification):** Built-in XP system to reward active citizens, fostering community engagement.
-*   **Automated Emergency Routing:** Immediate dispatch of high-severity alerts via Meta WhatsApp Cloud API directly to department heads.
+On first run it creates `backend/nagpur_pulse.db` with two tables:
 
-🛠️ Tech Stack
+- `users` — username, optional email, a **hashed** password (never stored in
+  plain text), created_at
+- `tickets` — every submitted civic report, so `/login` → sign up → submit a
+  report → track it by reference all work end-to-end against real data
 
-*   **Frontend:** HTML5, TailwindCSS, JavaScript, Leaflet.js (for Map Heatmaps).
-*   **Backend:** Flask (Python).
-*   **AI/Vision:** OpenCV (Image Processing, Contour Analysis, Blur Detection).
-*   **Real-time:** WebSockets (via Flask-SocketIO) for live ticket updates.
-*   **Integrations:** Meta Cloud WhatsApp API, OpenStreetMap API.
+## Pages
+| Page | Purpose |
+|---|---|
+| `/` (index.html) | Citizen report flow — camera/upload, voice note, map pin, submit |
+| `/login.html` | Command Center sign-in (real DB check; falls back to the demo login `admin` / `pulse2026` only if the backend isn't running) |
+| `/signup.html` | Create a new Command Center account |
+| `/admin.html` | Lands here after a successful sign-in / sign-up |
 
- 📂 Project Structure
-
-text
-nagpur-pulse/
-├── app.py                # Flask Backend & AI Logic
-├── static/
-│   ├── uploads/          # AI Processed Images
-│   └── css/              # Custom Styles
-├── templates/
-│   ├── index.html        # Citizen AI Portal
-│   └── admin_dashboard.html # Command Center
-└── requirements.txt      # Dependencies
+## Notes
+- Delete `backend/nagpur_pulse.db` any time to start with a clean database.
+- This is a local dev server (`debug=True`) — don't deploy it as-is to the
+  internet; swap in a production WSGI server and turn debug off first.

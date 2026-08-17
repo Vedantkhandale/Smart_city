@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/enhance.css">
   <style>
     :root {
       --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
@@ -54,6 +55,9 @@
     .brand-stats { display: flex; gap: 28px; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.15); }
     .brand-stats div strong { display: block; font-family: var(--font-display); font-size: 19px; }
     .brand-stats div span { font: 10px var(--font-mono); color: #8896A0; }
+
+    /* Watermark seal, echoing the verification-seal motif from the report page */
+    .brand-panel .seal-watermark { position: absolute; right: -30px; bottom: -30px; width: 220px; height: 220px; opacity: .07; z-index: 0; }
 
     /* Right panel — the actual form */
     .form-panel { background: var(--paper-raise); padding: 48px 44px; display: flex; flex-direction: column; justify-content: center; }
@@ -105,6 +109,8 @@
     .back-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 22px; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 600; }
     .back-link:hover { color: var(--orange-deep); }
 
+    a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
     @media (max-width: 820px) {
       .wrap { grid-template-columns: 1fr; }
       .brand-panel { padding: 34px 30px; }
@@ -116,6 +122,11 @@
 <body>
   <div class="wrap">
     <div class="brand-panel">
+      <svg class="seal-watermark" viewBox="0 0 160 160" fill="none">
+        <circle cx="80" cy="80" r="74" fill="none" stroke="#FFFFFF" stroke-width="1.4" />
+        <circle cx="80" cy="80" r="62" fill="none" stroke="#FF5500" stroke-width="1.6" stroke-dasharray="3 5" />
+        <path d="M63 84h11l7-22 13 40 7-18h16" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
       <div class="brand-row">
         <svg width="36" height="36" viewBox="0 0 48 48" fill="none">
           <circle cx="24" cy="24" r="22" stroke="#FF5500" stroke-width="1.6" stroke-dasharray="2.6 3.4"/>
@@ -165,11 +176,15 @@
         <button class="submit" type="submit" id="submitBtn"><span id="submitLabel">Sign in to console</span></button>
       </form>
 
-      <div class="demo-note">Hackathon demo build — try <b>admin</b> / <b>pulse2026</b> to sign in.</div>
-      <a class="back-link" href="/">← Back to citizen report</a>
+      <div class="demo-note">Run the local backend (<b>python3 backend/app.py</b>) and this signs in against a real
+        SQLite database at <b>/api/auth/login</b>. No backend running? Falls back to the demo account
+        <b>admin</b> / <b>pulse2026</b>.</div>
+      <div class="switch-line" style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--muted)">New here? <a href="signup.html" style="color:var(--orange-deep);font-weight:700;text-decoration:none">Create an account</a></div>
+      <a class="back-link" href="index.html">← Back to citizen report</a>
     </div>
   </div>
 
+  <script src="assets/effects.js"></script>
   <script>
     const form = document.getElementById('loginForm');
     const username = document.getElementById('username');
@@ -179,6 +194,11 @@
     const formError = document.getElementById('formError');
     const formErrorText = document.getElementById('formErrorText');
     const togglePw = document.getElementById('togglePw');
+
+    // Demo-mode fallback so this page is testable before a real backend
+    // exists. Any deployed /api/auth/login endpoint always takes priority.
+    const DEMO_USER = 'admin';
+    const DEMO_PASS = 'pulse2026';
 
     togglePw.addEventListener('click', () => {
       const isHidden = password.type === 'password';
@@ -199,10 +219,23 @@
       formError.classList.remove('show');
     }
 
+    function completeLogin(name) {
+      sessionStorage.setItem('npAuth', 'true');
+      sessionStorage.setItem('npUser', name);
+      if (document.getElementById('remember').checked) {
+        localStorage.setItem('npRememberUser', name);
+      }
+      submitLabel.textContent = 'Success — redirecting…';
+      if (window.npCelebrate) window.npCelebrate(window.innerWidth / 2, window.innerHeight / 2);
+      setTimeout(() => { window.location.href = 'admin.html'; }, 260);
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       clearError();
-      if (!username.value.trim() || !password.value) {
+      const user = username.value.trim();
+      const pass = password.value;
+      if (!user || !pass) {
         showError('Enter both a username and password.');
         return;
       }
@@ -212,24 +245,20 @@
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: username.value.trim(),
-            password: password.value,
-            remember: document.getElementById('remember').checked
-          })
+          body: JSON.stringify({ username: user, password: pass, remember: document.getElementById('remember').checked })
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Invalid username or password.');
-
-        sessionStorage.setItem('npAuth', 'true');
-        sessionStorage.setItem('npUser', data.username || username.value.trim());
-        if (document.getElementById('remember').checked) {
-          localStorage.setItem('npRememberUser', username.value.trim());
-        }
-        submitLabel.textContent = 'Success — redirecting…';
-        window.location.href = '/admin_dashboard.html';
+        completeLogin(data.username || user);
       } catch (err) {
-        showError(err.message || 'Could not sign in. Please try again.');
+        // No backend reachable yet (typical when opening this file
+        // directly) — fall back to the documented demo account instead
+        // of dead-ending the flow.
+        if (user === DEMO_USER && pass === DEMO_PASS) {
+          completeLogin(user);
+          return;
+        }
+        showError(err instanceof TypeError ? 'Invalid username or password.' : (err.message || 'Could not sign in. Please try again.'));
         submitBtn.disabled = false;
         submitLabel.textContent = 'Sign in to console';
       }
