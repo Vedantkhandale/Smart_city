@@ -1,4 +1,4 @@
-<!-- <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -227,7 +227,7 @@
           localStorage.setItem('npRememberUser', username.value.trim());
         }
         submitLabel.textContent = 'Success — redirecting…';
-        window.location.href = '/admin';
+        window.location.href = '/admin_dashboard.html';
       } catch (err) {
         showError(err.message || 'Could not sign in. Please try again.');
         submitBtn.disabled = false;
@@ -245,4 +245,4 @@
     }
   </script>
 </body>
-</html> -->
+</html>
