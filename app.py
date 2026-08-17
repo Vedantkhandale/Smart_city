@@ -3,11 +3,12 @@ import os
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 
 import cv2
 import numpy as np
 import requests
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, redirect, session, url_for
 from flask_socketio import SocketIO
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
@@ -20,12 +21,20 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 app = Flask(__name__)
 app.config.update(UPLOAD_FOLDER=UPLOAD_DIR, MAX_CONTENT_LENGTH=12 * 1024 * 1024)
+# Needed for session-based Command Center auth. Set FLASK_SECRET_KEY in real deployments.
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "nagpur-pulse-hackathon-demo-key")
 socketio = SocketIO(
     app,
     async_mode="threading",
     cors_allowed_origins=os.getenv("SOCKETIO_CORS_ORIGINS", "*"),
 )
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# 🔐 Command Center demo credentials (hackathon-only — swap for a real user table / SSO later).
+# Format: username -> {"password": ..., "display_name": ...}
+COMMAND_CENTER_USERS = {
+    "admin": {"password": os.getenv("ADMIN_PASSWORD", "pulse2026"), "display_name": "Admin"},
+}
 
 # ✨ Enhanced category configuration with detailed issue types
 CATEGORY_CONFIG = {
@@ -120,7 +129,7 @@ def detect_issue_features(image, category):
     """🤖 Enhanced feature detection to identify specific issue types"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     features = {"detected": [], "confidence": {}}
-    
+
     # Detect dark patches (street lights, broken fixtures)
     if category in {"Infrastructure", "PWD"}:
         dark_threshold = cv2.threshold(gray, 40, 255, cv2.THRESH_BINARY)[1]
@@ -129,7 +138,7 @@ def detect_issue_features(image, category):
         if len(dark_patches) > 0:
             features["detected"].append("Dark fixture detected (possible broken light)")
             features["confidence"]["street_light"] = min(75 + len(dark_patches) * 5, 95)
-    
+
     # Detect horizontal lines (road damage, potholes)
     if category in {"PWD", "Sanitation"}:
         edges = cv2.Canny(gray, 65, 155)
@@ -137,7 +146,7 @@ def detect_issue_features(image, category):
         if lines is not None and len(lines) > 5:
             features["detected"].append("Linear damage patterns detected")
             features["confidence"]["pothole"] = min(60 + len(lines) * 2, 90)
-    
+
     # Detect debris/garbage (waste accumulation)
     if category in {"Sanitation", "Water"}:
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
@@ -149,7 +158,7 @@ def detect_issue_features(image, category):
         if len(waste_contours) > 3:
             features["detected"].append("Waste/debris accumulation detected")
             features["confidence"]["garbage"] = min(70 + len(waste_contours), 92)
-    
+
     return features
 
 
@@ -189,16 +198,16 @@ def analyze_civic_image(image_path, category):
     focus_score = clamp(blur_variance / 3.2, 20, 100)
     exposure_score = 100 - min(abs(brightness - 128) * 0.55, 45)
     quality_score = int(round(clamp(focus_score * 0.62 + exposure_score * 0.38, 25, 99)))
-    
+
     base_confidence = clamp(58 + quality_score * 0.25 + min(feature_count, 30) * 0.55, 62, 96)
     confidence = int(round(min(base_confidence + (feature_boost * 0.15), 96)))
-    
+
     signal = CATEGORY_CONFIG[category]["signal"]
     feature_summary = " ".join(ai_features["detected"]) if ai_features["detected"] else ""
     full_summary = f"Vision triage found {feature_count} meaningful visual regions and a {risk_score}/100 risk pattern consistent with {signal}."
     if feature_summary:
         full_summary += f" {feature_summary}"
-    
+
     return {
         "status": "Accepted", "severity": severity, "risk_score": risk_score,
         "confidence": confidence, "quality_score": quality_score, "features_detected": feature_count,
@@ -341,12 +350,53 @@ def build_predictive_signals():
     return sorted(forecast, key=lambda item: item["forecast_score"], reverse=True)
 
 
+# ---------------------------------------------------------------------------
+# 🔐 Command Center auth (hackathon-simple session auth — swap for real auth later)
+# ---------------------------------------------------------------------------
+
+def login_required(view_fn):
+    @wraps(view_fn)
+    def wrapped(*args, **kwargs):
+        if not session.get("np_user"):
+            return redirect(url_for("login_page"))
+        return view_fn(*args, **kwargs)
+    return wrapped
+
+
+@app.route("/login")
+def login_page():
+    if session.get("np_user"):
+        return redirect(url_for("admin_dashboard"))
+    return render_template("login.html")
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def api_login():
+    payload = request.get_json(silent=True) or {}
+    username = (payload.get("username") or "").strip()
+    password = payload.get("password") or ""
+    user = COMMAND_CENTER_USERS.get(username)
+    if not user or user["password"] != password:
+        return jsonify({"error": "Invalid username or password."}), 401
+    session["np_user"] = username
+    if payload.get("remember"):
+        session.permanent = True
+    return jsonify({"message": "Signed in.", "username": user["display_name"]})
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def api_logout():
+    session.pop("np_user", None)
+    return jsonify({"message": "Signed out."})
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
 @app.route("/admin")
+@login_required
 def admin_dashboard():
     return render_template("admin_dashboard.html")
 
@@ -516,57 +566,57 @@ def update_complaint_status(ticket_id):
 @app.route("/api/department-tickets")
 def get_department_tickets():
     dept = request.args.get("dept", "Traffic").strip()
-    
+
     dept_key = None
     for key, config in CATEGORY_CONFIG.items():
         if config["department"].lower() == dept.lower() or key.lower() == dept.lower():
             dept_key = key
             break
-    
+
     if not dept_key:
         return jsonify({
             "error": "Invalid department",
             "valid_departments": list(CATEGORY_CONFIG.keys())
         }), 400
-    
+
     dept_config = CATEGORY_CONFIG[dept_key]
-    
+
     with get_db() as db:
         tickets = db.execute(
-            """SELECT id, reference, category, zone, severity, status, 
+            """SELECT id, reference, category, zone, severity, status,
                       created_at, ai_summary, image_url
-               FROM complaints 
+               FROM complaints
                WHERE department = ?
-               ORDER BY 
-                   CASE WHEN severity='Critical' THEN 0 
-                        WHEN severity='High' THEN 1 
-                        WHEN severity='Medium' THEN 2 
+               ORDER BY
+                   CASE WHEN severity='Critical' THEN 0
+                        WHEN severity='High' THEN 1
+                        WHEN severity='Medium' THEN 2
                         ELSE 3 END,
                    created_at DESC
                LIMIT 100
             """, (dept_config["department"],)
         ).fetchall()
-        
+
         total = len(tickets)
         pending = sum(1 for t in tickets if t["status"] in {"Queued", "Priority Dispatch"})
         in_progress = sum(1 for t in tickets if t["status"] in {"Assigned", "In Progress"})
         completed = sum(1 for t in tickets if t["status"] in {"Resolved", "Closed"})
-        
+
         critical = sum(1 for t in tickets if t["severity"] == "Critical")
         high = sum(1 for t in tickets if t["severity"] == "High")
         medium = sum(1 for t in tickets if t["severity"] == "Medium")
         low = sum(1 for t in tickets if t["severity"] == "Low")
-        
+
         issue_types = {}
         for ticket in tickets:
             cat = ticket["category"]
             issue_types[cat] = issue_types.get(cat, 0) + 1
-        
+
         zones = {}
         for ticket in tickets:
             zone = ticket["zone"]
             zones[zone] = zones.get(zone, 0) + 1
-    
+
     dept_colors = {
         "Traffic": "#FF6B6B",
         "PWD": "#4ECDC4",
@@ -574,7 +624,7 @@ def get_department_tickets():
         "Water": "#74B9FF",
         "Infrastructure": "#A29BFE"
     }
-    
+
     dept_icons = {
         "Traffic": "🚦",
         "PWD": "🛣️",
@@ -582,7 +632,7 @@ def get_department_tickets():
         "Water": "💧",
         "Infrastructure": "🏗️"
     }
-    
+
     return jsonify({
         "department": dept_key,
         "department_full": dept_config["department"],
