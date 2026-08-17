@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Nagpur Pulse | PWD Roads Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/enhance.css">
+  <style>
+    :root {
+      --paper: #F4F0E6; --paper-raise: #FFFFFF; --ink: #0F171C; --ink-soft: #33414E;
+      --orange: #FF5500; --orange-deep: #B33B00; --leaf: #00875A; --leaf-tint: #E6F4ED;
+      --line: #E2DAA8; --line-subtle: #EAE3D2; --muted: #6B7280; --dark-hud: #0B1015; --danger: #DE350B;
+      --font-display: 'Zilla Slab', Georgia, serif;
+      --font-body: 'Inter', Arial, sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font-family: var(--font-body);
+      background-image: radial-gradient(circle at 10% 0%, rgba(255,85,0,.08), transparent 40rem);
+      background-attachment: fixed;
+    }
+    .shell { max-width: 1400px; margin: auto; padding: 20px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 20px; border-bottom: 1px solid var(--line-subtle); margin-bottom: 24px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand b { font-family: var(--font-display); font-weight: 900; font-size: 18px; }
+    .brand small { display: block; font-family: var(--font-mono); font-size: 8px; letter-spacing: 1.4px; color: var(--orange); }
+    .top-right { display: flex; gap: 16px; align-items: center; }
+    .nav-back {
+      border: 1px solid var(--line); background: var(--paper-raise); padding: 8px 12px; border-radius: 8px;
+      font: 10px var(--font-mono); cursor: pointer; color: var(--ink-soft); transition: all 0.2s ease;
+      text-transform: uppercase; font-weight: 700; text-decoration: none;
+    }
+    .nav-back:hover { border-color: var(--orange); color: var(--orange-deep); }
+    .signout { border: 1px solid var(--line); background: var(--paper-raise); border-radius: 999px; padding: 8px 14px; font: 700 10px var(--font-mono); cursor: pointer; color: var(--ink-soft); }
+    .signout:hover { border-color: var(--danger); color: var(--danger); }
+    
+    .controls { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+    .control-group { display: flex; gap: 8px; align-items: center; }
+    .control-group label { font: 11px var(--font-mono); color: var(--ink-soft); font-weight: 700; }
+    .control-group select, .control-group input {
+      padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font: 11px var(--font-body); background: var(--paper-raise);
+      color: var(--ink);
+    }
+    
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat { background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 12px; padding: 16px;
+      text-align: center; }
+    .stat strong { display: block; font-family: var(--font-display); font-size: 20px; color: var(--orange); }
+    .stat span { display: block; font: 9px var(--font-mono); color: var(--muted); margin-top: 4px; text-transform: uppercase; }
+    
+    .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .ticket-card {
+      background: var(--paper-raise); border: 1px solid var(--line-subtle); border-radius: 14px; overflow: hidden;
+      transition: all 0.2s ease; cursor: pointer;
+    }
+    .ticket-card:hover { border-color: var(--orange); box-shadow: 0 8px 24px rgba(255,85,0,0.12); }
+    .ticket-image { width: 100%; height: 160px; background: var(--line-subtle); object-fit: cover; }
+    .ticket-content { padding: 14px; }
+    .ticket-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px; }
+    .ticket-ref { font: 700 11px var(--font-mono); color: var(--orange-deep); }
+    .ticket-severity {
+      font: 700 9px var(--font-mono); padding: 3px 7px; border-radius: 4px; text-transform: uppercase;
+      background: var(--orange-tint); color: var(--orange-deep);
+    }
+    .ticket-severity.critical { background: #FDECEA; color: var(--danger); }
+    .ticket-info { font-size: 12px; }
+    .ticket-info p { margin: 4px 0; color: var(--ink-soft); }
+    .ticket-zone { color: var(--muted); font-size: 11px; }
+    .ticket-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--line-subtle); }
+    .risk-score { font: 700 12px var(--font-display); color: var(--orange-deep); }
+    .eta { font: 9px var(--font-mono); color: var(--muted); }
+    
+    .empty { text-align: center; padding: 40px; color: var(--muted); }
+    .empty p { margin: 0; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="#FF5500" stroke-width="1.6" stroke-dasharray="2.6 3.4"/>
+          <circle cx="24" cy="24" r="16.5" fill="#FFF0E6" stroke="#B33B00" stroke-width="1.2"/>
+          <path d="M14 27h5l3-10 6 18 3-9h7" stroke="#0F171C" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span><b>Nagpur Pulse</b><small>PWD ROADS</small></span>
+      </div>
+      <div class="top-right">
+        <a href="admin_dashboard.html" class="nav-back">← Back to Admin</a>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span id="whoLabel" style="font: 11px var(--font-mono); color: var(--ink-soft);"></span>
+          <button class="signout" id="signOut">Sign out</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <div class="control-group">
+        <label for="zoneFilter">Zone:</label>
+        <select id="zoneFilter" onchange="loadComplaints()">
+          <option value="All">All Zones</option>
+          <option value="Dharampeth Zone-1">Dharampeth Zone-1</option>
+          <option value="Dhantoli Zone-2">Dhantoli Zone-2</option>
+          <option value="Laxmi Nagar Zone-3">Laxmi Nagar Zone-3</option>
+          <option value="Nehru Nagar Zone-4">Nehru Nagar Zone-4</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="statusFilter">Status:</label>
+        <select id="statusFilter" onchange="loadComplaints()">
+          <option value="All">All Status</option>
+          <option value="Priority Dispatch">Priority Dispatch</option>
+          <option value="Queued">Queued</option>
+          <option value="Assigned">Assigned</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Resolved">Resolved</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="totalCount">0</strong>
+        <span>Road Reports</span>
+      </div>
+      <div class="stat">
+        <strong id="criticalCount">0</strong>
+        <span>Critical</span>
+      </div>
+      <div class="stat">
+        <strong id="pendingCount">0</strong>
+        <span>Pending</span>
+      </div>
+      <div class="stat">
+        <strong id="resolvedCount">0</strong>
+        <span>Resolved</span>
+      </div>
+    </div>
+
+    <div id="ticketsContainer" class="tickets-grid"></div>
+  </main>
+
+  <script src="assets/effects.js"></script>
+  <script>
+    if (sessionStorage.getItem('npAuth') !== 'true') {
+      window.location.href = 'login.html';
+    }
+    const name = sessionStorage.getItem('npUser') || 'staff';
+    document.getElementById('whoLabel').textContent = 'Signed in as ' + name;
+    document.getElementById('signOut').addEventListener('click', () => {
+      sessionStorage.removeItem('npAuth');
+      sessionStorage.removeItem('npUser');
+      window.location.href = 'login.html';
+    });
+
+    async function loadComplaints() {
+      try {
+        let url = '/api/complaints?limit=250&dept=PWD';
+        const zone = document.getElementById('zoneFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        if (zone !== 'All') url += '&zone=' + encodeURIComponent(zone);
+        if (status !== 'All') url += '&status=' + encodeURIComponent(status);
+        
+        const res = await fetch(url);
+        const tickets = await res.json();
+        
+        renderTickets(tickets);
+        updateStats(tickets);
+      } catch (err) {
+        console.error('Failed to load complaints:', err);
+      }
+    }
+
+    function renderTickets(tickets) {
+      const container = document.getElementById('ticketsContainer');
+      if (tickets.length === 0) {
+        container.innerHTML = '<div class="empty" style="grid-column: 1/-1;"><p>No road damage reports at this time</p></div>';
+        return;
+      }
+
+      container.innerHTML = tickets.map(ticket => `
+        <div class="ticket-card">
+          <img src="${ticket.image_url}" alt="Report" class="ticket-image">
+          <div class="ticket-content">
+            <div class="ticket-header">
+              <span class="ticket-ref">${ticket.reference}</span>
+              <span class="ticket-severity ${ticket.severity.toLowerCase()}">${ticket.severity}</span>
+            </div>
+            <div class="ticket-info">
+              <p><strong>Zone:</strong> <span class="ticket-zone">${ticket.zone}</span></p>
+              <p><strong>Status:</strong> ${ticket.status}</p>
+              <p><strong>Voice Note:</strong> ${ticket.voice.substring(0, 40)}...</p>
+            </div>
+            <div class="ticket-footer">
+              <div class="risk-score">Risk: ${ticket.risk_score}/100</div>
+              <div class="eta">${ticket.eta}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateStats(tickets) {
+      const total = tickets.length;
+      const critical = tickets.filter(t => t.severity === 'Critical').length;
+      const pending = tickets.filter(t => t.status !== 'Resolved').length;
+      const resolved = tickets.filter(t => t.status === 'Resolved').length;
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('criticalCount').textContent = critical;
+      document.getElementById('pendingCount').textContent = pending;
+      document.getElementById('resolvedCount').textContent = resolved;
+    }
+
+    loadComplaints();
+    setInterval(loadComplaints, 5000);
+  </script>
+</body>
+</html>
